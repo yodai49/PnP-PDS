@@ -1,7 +1,7 @@
 {
-    "path_dataset": "C:/Users/temp/Documents/lab/images/ILSVRC2012_img_subset5000/",
-    "path_dataset_pnp": "C:/Users/temp/Documents/lab/images/testimages/",
+    "path_train": "C:/Users/temp/Documents/lab/images/ILSVRC2012_img_subset5000/",
+    "path_test": "C:/Users/temp/Documents/lab/images/testimages/",
     "pattern_red": "*.JPEG", 
-    "root_folder": "C:/Users/temp/Documents/lab/PnP-MMO-imaging-main/"
+    "root_folder": "C:/Users/temp/Documents/lab/PnP-PDS/"
 }
     
