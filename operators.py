@@ -28,13 +28,13 @@ def get_adj_blur_operator(x, h):
 
     return y[..., :-l+1, :-l+1]
 
-def get_operators(shape, gamma1, gamma2, path_kernel):
+def get_operators(shape, gamma1, gamma2, lambda1, path_kernel):
     def phi(x):
         return get_blur_operator(x, h)
     def adj_phi(x):
         return get_adj_blur_operator(x, h)
     def prox_g(x):
-        return np.sign(x) * np.fmax(0, np.abs(x) - gamma1)
+        return np.sign(x) * np.fmax(0, np.abs(x) - lambda1 * gamma1)
     def prox_h(x):
         return np.sign(x) * np.fmax(0, np.abs(x) - gamma2)
     
