@@ -28,7 +28,7 @@ def get_adj_blur_operator(x, h):
 
     return y[..., :-l+1, :-l+1]
 
-def get_operators(shape, gamma1, gamma2, lambda1, path_kernel):
+def get_operators(shape, gamma1, gamma2, lambda1, lambda2, path_kernel):
     def phi(x):
         return get_blur_operator(x, h)
     def adj_phi(x):
@@ -36,10 +36,12 @@ def get_operators(shape, gamma1, gamma2, lambda1, path_kernel):
     def prox_g(x):
         return np.sign(x) * np.fmax(0, np.abs(x) - lambda1 * gamma1)
     def prox_h(x):
-        return np.sign(x) * np.fmax(0, np.abs(x) - gamma2)
+        return np.fmax(0, np.fmin(1, x))
+    def prox_h_dual(x):
+        return x - gamma2 * prox_h(x / gamma2)
     
     h = scipy.io.loadmat(path_kernel)
     h = np.array(h['blur'])
     size = np.prod(shape)
     L = np.eye(size, size)
-    return phi, adj_phi, prox_g, prox_h, L
+    return phi, adj_phi, prox_g, prox_h_dual, L
