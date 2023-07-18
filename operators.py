@@ -2,6 +2,8 @@ import scipy
 import scipy.io
 import numpy as np
 
+from utils.denoiser import Denoiser
+
 def get_blur_operator(x, h):
     # return x*h where * is a convolution
     if(np.ndim(x) == 3):
@@ -28,13 +30,15 @@ def get_adj_blur_operator(x, h):
 
     return y[..., :-l+1, :-l+1]
 
-def get_operators(shape, gamma1, gamma2, lambda1, lambda2, path_kernel):
+def get_operators(shape, gamma1, gamma2, lambda1, lambda2, path_kernel, architecture):
     def phi(x):
         return get_blur_operator(x, h)
     def adj_phi(x):
         return get_adj_blur_operator(x, h)
     def prox_g(x):
-        return np.sign(x) * np.fmax(0, np.abs(x) - lambda1 * gamma1)
+        denoiser = Denoiser(architecture = architecture)
+        return denoiser.denoise(x)
+        #return np.sign(x) * np.fmax(0, np.abs(x) - lambda1 * gamma1)
     def prox_h(x):
         return np.fmax(0, np.fmin(1, x))
     def prox_h_dual(x):

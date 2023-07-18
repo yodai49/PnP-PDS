@@ -6,12 +6,12 @@ import numpy as np
 import os
 import torch
 
-from pds import test_pds
 from operators import get_operators
+from pds import test_pds
 from utils.helpers import save_imgs
 
 parser = argparse.ArgumentParser(description="testing PnP-PDS")
-parser.add_argument("--architecture", type=str, default='DnCNN_nobn', help="type of network")
+parser.add_argument("--architecture", type=str, default='DnCNN_nobn', help="architecture of network")
 parser.add_argument("--gamma1", type=float, default=1.99, help='step size for the primal problem')
 parser.add_argument("--gamma2", type=float, default=1.99, help='step size for the dual problem')
 parser.add_argument("--kernel", type=str, default='blur_1', help='kernel of the degradation measurement operator')
@@ -38,7 +38,7 @@ def eval_pds(max_iter = 1000, noise_level = 0.01, gamma1 = 1.99, gamma2 = 1.99, 
         img_true = np.asarray(img_true, dtype="float32")/255.
         img_true = np.moveaxis(img_true, -1, 0)
 
-        phi, adj_phi, prox_g, prox_h_dual, L = get_operators(shape = img_true.shape, gamma1 = gamma1, gamma2 = gamma2, lambda1 = lambda1, lambda2 = lambda2, path_kernel = path_kernel)
+        phi, adj_phi, prox_g, prox_h_dual, L = get_operators(shape = img_true.shape, gamma1 = gamma1, gamma2 = gamma2, lambda1 = lambda1, lambda2 = lambda2, path_kernel = path_kernel, architecture = opt.architecture)
 
         noise = np.random.randn(*img_true.shape)
         img_blur = phi(np.copy(img_true)) + noise_level * noise
