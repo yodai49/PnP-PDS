@@ -4,7 +4,6 @@ import glob
 import json
 import numpy as np
 import os
-import torch
 
 from operators import get_operators
 from pds import test_pds
@@ -31,14 +30,15 @@ def eval_pds(max_iter = 1000, noise_level = 0.01, gamma1 = 1.99, gamma2 = 1.99, 
     path_result = config['path_result']
 
     path_images = sorted(glob.glob(os.path.join(path_test, pattern_red)))
-    path_kernel = config['root_folder'] + '/blur_models/' + opt.kernel + '.mat'
+    path_kernel = config['root_folder'] + 'blur_models/' + opt.kernel + '.mat'
+    path_prox = config['root_folder'] + 'nn/' + opt.architecture + '.pth'
 
     for path_img in path_images:
         img_true = cv2.imread(path_img)
         img_true = np.asarray(img_true, dtype="float32")/255.
         img_true = np.moveaxis(img_true, -1, 0)
 
-        phi, adj_phi, prox_g, prox_h_dual, L = get_operators(shape = img_true.shape, gamma1 = gamma1, gamma2 = gamma2, lambda1 = lambda1, lambda2 = lambda2, path_kernel = path_kernel, architecture = opt.architecture)
+        phi, adj_phi, prox_g, prox_h_dual, L = get_operators(shape = img_true.shape, gamma1 = gamma1, gamma2 = gamma2, lambda1 = lambda1, lambda2 = lambda2, path_kernel = path_kernel, path_prox = path_prox)
 
         noise = np.random.randn(*img_true.shape)
         img_blur = phi(np.copy(img_true)) + noise_level * noise

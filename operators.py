@@ -2,7 +2,7 @@ import scipy
 import scipy.io
 import numpy as np
 
-from utils.denoiser import Denoiser
+from models.denoiser import Denoiser
 
 def get_blur_operator(x, h):
     # return x*h where * is a convolution
@@ -30,13 +30,13 @@ def get_adj_blur_operator(x, h):
 
     return y[..., :-l+1, :-l+1]
 
-def get_operators(shape, gamma1, gamma2, lambda1, lambda2, path_kernel, architecture):
+def get_operators(shape, gamma1, gamma2, lambda1, lambda2, path_kernel, path_prox):
     def phi(x):
         return get_blur_operator(x, h)
     def adj_phi(x):
         return get_adj_blur_operator(x, h)
     def prox_g(x):
-        denoiser = Denoiser(architecture = architecture)
+        denoiser = Denoiser(file_name=path_prox)
         return denoiser.denoise(x)
         #return np.sign(x) * np.fmax(0, np.abs(x) - lambda1 * gamma1)
     def prox_h(x):
