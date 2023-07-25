@@ -1,2 +1,4 @@
 .env/
 config/
+result-PDS/
+__pycache__/
