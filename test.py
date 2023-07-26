@@ -77,17 +77,17 @@ def eval_pds(max_iter = 1000, noise_level = 0.01, gamma1 = 1.99, gamma2 = 1.99, 
         def grad_f(x):
             return adj_phi(phi(x) - x_0)
         
-        img_sol, c, psnr = test_iter(x_0 = x_0, x_true = img_true, grad_f = grad_f, prox_g = prox_g, prox_h_dual = prox_h_dual, L = L, gamma1 = gamma1, gamma2 = gamma2, max_iter = max_iter, method = "FB")
+        img_sol, c, psnr = test_iter(x_0 = x_0, x_true = img_true, grad_f = grad_f, prox_g = prox_g, prox_h_dual = prox_h_dual, L = L, gamma1 = gamma1, gamma2 = gamma2, max_iter = max_iter, method = "PDS")
         #img_sol, c_pds, psnr_pds = test_iter(x_0 = x_0, x_true = img_true, grad_f = grad_f, prox_g = prox_g, prox_h_dual = prox_h_dual, L = L, gamma1 = gamma1, gamma2 = gamma2, max_iter = max_iter)
             
+        print(path_img)
+        print('PSNR: ', psnr)
         if(result_output):
             pictures = [img_true, img_blur, img_sol]
             path_pictures = [path_result + path_img[path_img.rfind('\\'):] + '_true',  path_result +  path_img[path_img.rfind('\\'):] + '_blur', path_result + path_img[path_img.rfind('\\'):]+ '_sol']
             save_imgs(pictures = pictures, path_pictures = path_pictures, format = '.png')
-            print(path_img)
 
     if(result_output):
-        print('PSNR: ', psnr)
         x = np.arange(0, max_iter, 1)
         plt.title('Convergence')
         plt.gca().set_yscale('log')
