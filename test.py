@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-from operators import get_operators
+from operators import get_operators, get_blur_operators
 from pds import test_iter
 from utils.helpers import save_imgs
 
@@ -68,14 +68,11 @@ def eval_pds(max_iter = 1000, noise_level = 0.01, gamma1 = 1.99, gamma2 = 1.99, 
         img_true = np.asarray(img_true, dtype="float32")/255.
         img_true = np.moveaxis(img_true, -1, 0)
 
-        phi, adj_phi, prox_g, prox_h_dual, L = get_operators(shape = img_true.shape, gamma1 = gamma1, gamma2 = gamma2, lambda1 = lambda1, lambda2 = lambda2, path_kernel = path_kernel, path_prox = path_prox)
-
+        phi, adj_phi = get_blur_operators(shape = img_true.shape, path_kernel = path_kernel)
         noise = np.random.randn(*img_true.shape)
         img_blur = phi(np.copy(img_true)) + noise_level * noise
-
         x_0 = np.copy(img_blur)
-        def grad_f(x):
-            return adj_phi(phi(x) - x_0)
+        grad_f, prox_g, prox_h_dual, L = get_operators(shape = img_true.shape, gamma1 = gamma1, gamma2 = gamma2, lambda1 = lambda1, lambda2 = lambda2, phi = phi, adj_phi = adj_phi, path_prox = path_prox, x_0 = x_0)
         
         img_sol, c, psnr = test_iter(x_0 = x_0, x_true = img_true, grad_f = grad_f, prox_g = prox_g, prox_h_dual = prox_h_dual, L = L, gamma1 = gamma1, gamma2 = gamma2, max_iter = max_iter, method = "PDS")
         #img_sol, c_pds, psnr_pds = test_iter(x_0 = x_0, x_true = img_true, grad_f = grad_f, prox_g = prox_g, prox_h_dual = prox_h_dual, L = L, gamma1 = gamma1, gamma2 = gamma2, max_iter = max_iter)
