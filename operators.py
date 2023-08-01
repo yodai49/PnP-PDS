@@ -39,10 +39,10 @@ def get_blur_operators(shape, path_kernel):
     h = np.array(h['blur'])
     return phi, adj_phi
 
-def get_operators(shape, gamma1, gamma2, lambda1, lambda2, phi, adj_phi, path_prox, x_0, epsilon_dash):
+def get_operators(shape, gamma1, gamma2, lambda1, lambda2, phi, adj_phi, path_prox, x_0, epsilon):
     def grad_f(x, s):
-        #return np.zeros(x.shape)
-        return 2 * adj_phi(phi(x) + s - x_0) # blur operator
+        return np.zeros(x.shape)
+        #return 1 * adj_phi(phi(x) + s - x_0) # blur operator
     
     def prox_g(x):
         #return x
@@ -50,20 +50,16 @@ def get_operators(shape, gamma1, gamma2, lambda1, lambda2, phi, adj_phi, path_pr
         return denoiser.denoise(x)
         
         #return np.sign(x) * np.fmax(0, np.abs(x) - lambda1 * gamma1)
-        
-        #return x
     
     def prox_h(x):
         # projection on l2 ball 
         val  = x
-        epsilon = np.sqrt(size) * epsilon_dash
-        if(np.linalg.norm(x - x_0) > epsilon):
-            val = x_0 + epsilon * (x - x_0) / np.linalg.norm(x - x_0)
+        epsilon_dash = np.sqrt(size) * epsilon
+        if(np.linalg.norm(x - x_0) > epsilon_dash):
+            val = x_0 + epsilon_dash * (x - x_0) / np.linalg.norm(x - x_0)
         return val
         
         #return np.fmax(0, np.fmin(1, x))  # box constraint
-        #alpha = 0.5
-        #return (phi(x) - gamma2 * alpha + np.sqrt((phi(x)-gamma2 * alpha)**2 + 4 * gamma2 * x_0))
 
     def prox_h_dual(x):
         return x - gamma2 * prox_h(x / gamma2)
@@ -74,7 +70,7 @@ def get_operators(shape, gamma1, gamma2, lambda1, lambda2, phi, adj_phi, path_pr
 def get_operators_s(shape, eta, phi, x_0):
     def grad_f(x, s):
         #return np.zeros(x.shape)
-        return 2 * (phi(x) + s - x_0)
+        return 1 * (phi(x) + s - x_0)
     
     def prox_g(s):
         # Projection on l1 ball
