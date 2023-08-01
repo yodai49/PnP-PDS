@@ -12,3 +12,15 @@ def save_img(picture, path_picture):
 def save_imgs(pictures, path_pictures, format):
     for i, picture in enumerate(pictures):
         save_img(picture = picture, path_picture = path_pictures[i] + format)
+        
+def add_salt_and_pepper_noise(img, noise_level):
+    noise_cnt = (int)(img.shape[1] * img.shape[2] * noise_level / 2)
+    sp_noise_x = np.random.randint(0, img.shape[1], noise_cnt * 2)
+    sp_noise_y = np.random.randint(0, img.shape[2], noise_cnt * 2)
+    img[0][(sp_noise_x[:noise_cnt],sp_noise_y[:noise_cnt])] = 1
+    img[1][(sp_noise_x[:noise_cnt],sp_noise_y[:noise_cnt])] = 1
+    img[2][(sp_noise_x[:noise_cnt],sp_noise_y[:noise_cnt])] = 1
+    img[0][(sp_noise_x[noise_cnt:],sp_noise_y[noise_cnt:])] = 0
+    img[1][(sp_noise_x[noise_cnt:],sp_noise_y[noise_cnt:])] = 0
+    img[2][(sp_noise_x[noise_cnt:],sp_noise_y[noise_cnt:])] = 0
+    return img

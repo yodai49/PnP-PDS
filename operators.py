@@ -30,18 +30,22 @@ def get_adj_blur_operator(x, h):
 
 def get_blur_operators(shape, path_kernel):
     def phi(x):
+        #return x
         return get_blur_operator(x, h)
     def adj_phi(x):
+        #return x
         return get_adj_blur_operator(x, h)
     h = scipy.io.loadmat(path_kernel)
     h = np.array(h['blur'])
     return phi, adj_phi
 
 def get_operators(shape, gamma1, gamma2, lambda1, lambda2, phi, adj_phi, path_prox, x_0, epsilon_dash):
-    def grad_f(x):
-        return np.zeros(x.shape)
-        #return adj_phi(phi(x) - x_0) # blur operator
+    def grad_f(x, s):
+        #return np.zeros(x.shape)
+        return 2 * adj_phi(phi(x) + s - x_0) # blur operator
+    
     def prox_g(x):
+        #return x
         denoiser = Denoiser(file_name=path_prox)
         return denoiser.denoise(x)
         
@@ -50,15 +54,11 @@ def get_operators(shape, gamma1, gamma2, lambda1, lambda2, phi, adj_phi, path_pr
         #return x
     
     def prox_h(x):
-
         # projection on l2 ball 
         val  = x
-        epsilon = shape[0] * epsilon_dash
-        if(np.linalg.norm(x - x_0) > epsilon):   
+        epsilon = np.sqrt(size) * epsilon_dash
+        if(np.linalg.norm(x - x_0) > epsilon):
             val = x_0 + epsilon * (x - x_0) / np.linalg.norm(x - x_0)
-            print('NG: epsilon_dash = ', epsilon_dash)
-        else:
-            print('OK: epsilon_dash = ', epsilon_dash)
         return val
         
         #return np.fmax(0, np.fmin(1, x))  # box constraint
@@ -69,5 +69,20 @@ def get_operators(shape, gamma1, gamma2, lambda1, lambda2, phi, adj_phi, path_pr
         return x - gamma2 * prox_h(x / gamma2)
     
     size = np.prod(shape)
-    L = np.eye(size, size)
-    return grad_f, prox_g, prox_h_dual, L
+    return grad_f, prox_g, prox_h_dual
+
+def get_operators_s(shape, eta, phi, x_0):
+    def grad_f(x, s):
+        #return np.zeros(x.shape)
+        return 2 * (phi(x) + s - x_0)
+    
+    def prox_g(s):
+        # Projection on l1 ball
+        x = s.reshape((-1))
+        mymax = np.max((np.cumsum(np.sort(np.abs(x))[::-1])-eta)/(x.size))
+        x = np.fmax(np.abs(x)-np.fmax(mymax, 0), 0)*np.sign(x)
+        val = x.reshape(s.shape)
+        return val
+
+    size = np.prod(shape)
+    return grad_f, prox_g
