@@ -99,4 +99,4 @@ def eval_pds(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, g
 
 if (__name__ == '__main__'):
     #grid_search(30)
-    eval_pds(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, lambda1 = opt.lambda1, lambda2 = opt.lambda2, epsilon_dash = 0.9, result_output=True)
+    eval_pds(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, lambda1 = opt.lambda1, lambda2 = opt.lambda2, epsilon_dash = 0.9*opt.gaussian_nl, result_output=True)
