@@ -28,56 +28,45 @@ def get_adj_blur_operator(x, h):
             y[i, ...] = np.real(np.fft.ifft2(np.conj(h) * np.fft.fft2(x[i, ...])))
     return y[..., :-l+1, :-l+1]
 
-def get_blur_operators(path_kernel):
+def get_observation_operators(path_kernel):
     def phi(x):
-        #return x
         return get_blur_operator(x, h)
     def adj_phi(x):
-        #return x
         return get_adj_blur_operator(x, h)
+    
     h = scipy.io.loadmat(path_kernel)
     h = np.array(h['blur'])
     return phi, adj_phi
-
-def get_operators(size, gamma1, gamma2, lambda1, lambda2, phi, adj_phi, path_prox, x_0, alpha_epsilon, gaussian_nl):
-    def grad_f(x, s):
-        #return np.zeros(x.shape)
-        return 2 * adj_phi(phi(x) + s - x_0) # blur operator
     
-    def prox_g(x):
-        #return x
-        denoiser = Denoiser(file_name=path_prox)
-        return denoiser.denoise(x)
-        
-        #return np.sign(x) * np.fmax(0, np.abs(x) - lambda1 * gamma1)
-    
-    def prox_h(x):
-        # projection on l2 ball 
-        val  = x
-        epsilon = np.sqrt(size) * alpha_epsilon * gaussian_nl
-        if(np.linalg.norm(x - x_0) > epsilon):
-            val = x_0 + epsilon * (x - x_0) / np.linalg.norm(x - x_0)
-        return val
-        
-        #return np.fmax(0, np.fmin(1, x))  # box constraint
+def denoise(x, path_prox):
+    denoiser = Denoiser(file_name=path_prox)
+    return denoiser.denoise(x)
 
-    def prox_h_dual(x):
-        return x - gamma2 * prox_h(x / gamma2)
-    
-    return grad_f, prox_g, prox_h_dual
+def grad_x_l2(x, s, phi, adj_phi, x_0):
+    return 2 * adj_phi(phi(x) + s - x_0)
 
-def get_operators_s(size, alpha_eta, phi, x_0, sp_nl):
-    def grad_f(x, s):
-        #return np.zeros(x.shape)
-        return 2 * (phi(x) + s - x_0)
+def grad_s_l2(x, s, phi, x_0):
+    return 2 * (phi(x) + s - x_0)
     
-    def prox_g(s):
-        # Projection on l1 ball
-        eta = alpha_eta * 0.5 * size * sp_nl
-        x = s.reshape((-1))
-        mymax = np.max((np.cumsum(np.sort(np.abs(x))[::-1])-eta)/(x.size))
-        x = np.fmax(np.abs(x)-np.fmax(mymax, 0), 0)*np.sign(x)
-        val = x.reshape(s.shape)
-        return val
+def proj_l1_ball(x, alpha_eta, sp_nl):
+    # Projection on l1 ball
+    eta = alpha_eta * 0.5 * x.size * sp_nl
+    y = x.reshape((-1))
+    mymax = np.max((np.cumsum(np.sort(np.abs(y))[::-1])-eta)/(y.size))
+    y = np.fmax(np.abs(y)-np.fmax(mymax, 0), 0)*np.sign(y)
+    val = y.reshape(x.shape)
+    return val
 
-    return grad_f, prox_g
+def proj_l2_ball(x, alpha_epsilon, gaussian_nl, x_0):
+    # projection on l2 ball 
+    val  = x
+    epsilon = np.sqrt(x.size) * alpha_epsilon * gaussian_nl
+    if(np.linalg.norm(x - x_0) > epsilon):
+        val = x_0 + epsilon * (x - x_0) / np.linalg.norm(x - x_0)
+    return val
+
+def proj_l2_ball_dual(x, gamma2, alpha_epsilon, gaussian_nl, x_0):
+    return x - gamma2 * proj_l2_ball(x / gamma2, alpha_epsilon, gaussian_nl, x_0)
+
+#return np.fmax(0, np.fmin(1, x))  # box constraint
+#return np.sign(x) * np.fmax(0, np.abs(x) - lambda1 * gamma1) # prox of l1

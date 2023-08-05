@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-from operators import get_operators, get_operators_s, get_blur_operators
+from operators import get_observation_operators
 from pds import test_iter
 from utils.helpers import save_imgs, add_salt_and_pepper_noise
 
@@ -37,7 +37,7 @@ def grid_search(grid_num = 6):
         param_psnr[i] = 0
         param_epsilon_dash[i] = gridEpsilon
         print('epsilon_dash: ', gridEpsilon)
-        param_psnr[i], param_psnr_best[i] = eval_pds(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, lambda1 = opt.lambda1, lambda2 = opt.lambda2, alpha_eta = opt.alpha_eta, alpha_epsilon = gridEpsilon, result_output=False)
+        param_psnr[i], param_psnr_best[i] = eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, lambda1 = opt.lambda1, lambda2 = opt.lambda2, alpha_eta = opt.alpha_eta, alpha_epsilon = gridEpsilon, result_output=False)
     x = param_epsilon_dash.flatten()
     y = param_psnr.flatten()
     z = param_psnr_best.flatten()
@@ -55,7 +55,7 @@ def grid_search(grid_num = 6):
     plt.show()
 
 
-def eval_pds(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, gamma2 = 1.99, lambda1 = 0.1, alpha_epsilon = 0.9, alpha_eta = 0.9, lambda2 = 0.1, result_output = True):
+def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, gamma2 = 1.99, lambda1 = 0.1, alpha_epsilon = 0.9, alpha_eta = 0.9, lambda2 = 0.1, result_output = True):
     path_test = config['path_test']
     pattern_red = config['pattern_red']
     path_result = config['path_result']
@@ -69,7 +69,7 @@ def eval_pds(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, g
         img_true = np.asarray(img_true, dtype="float32")/255.
         img_true = np.moveaxis(img_true, -1, 0)
 
-        phi, adj_phi = get_blur_operators(path_kernel = path_kernel)
+        phi, adj_phi = get_observation_operators(path_kernel = path_kernel)
         gaussian_noise = np.random.randn(*img_true.shape)
         img_blur = phi(np.copy(img_true)) + gaussian_nl * gaussian_noise
         img_blur = add_salt_and_pepper_noise(img_blur, sp_nl)
@@ -78,12 +78,9 @@ def eval_pds(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, g
         
         #epsilon = np.linalg.norm(gaussian_noise) / np.sqrt(img_true.size) # oracle
         #print(epsilon)
-
-        grad_f, prox_g, prox_h_dual = get_operators(size = img_true.size, gamma1 = gamma1, gamma2 = gamma2, lambda1 = lambda1, lambda2 = lambda2, alpha_epsilon=alpha_epsilon, gaussian_nl = gaussian_nl, phi = phi, adj_phi = adj_phi, path_prox = path_prox, x_0 = x_0)
-        grad_f_s, prox_g_s = get_operators_s(size = img_true.size, alpha_eta = alpha_eta, phi = phi, x_0 = x_0, sp_nl = sp_nl)
         
-        img_sol, s_sol, _, psnr = test_iter(x_0 = x_0, x_true = img_true, grad_f = grad_f, prox_g = prox_g, prox_h_dual = prox_h_dual, grad_f_s = grad_f_s, prox_g_s = prox_g_s, phi = phi, adj_phi = adj_phi, gamma1 = gamma1, gamma2 = gamma2, max_iter = max_iter, method = "PDS_S")
-            
+        img_sol, s_sol, _, psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_eta, alpha_epsilon, gaussian_nl, sp_nl, path_prox, max_iter, "PnP-PDS_with_sparse_noise")
+
         print(path_img)
         print('PSNR: ', psnr[-1])
         if(result_output):
@@ -104,4 +101,4 @@ def eval_pds(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, g
 
 if (__name__ == '__main__'):
     #grid_search(40)
-    eval_pds(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, lambda1 = opt.lambda1, lambda2 = opt.lambda2, alpha_epsilon = opt.alpha_epsilon, alpha_eta = opt.alpha_eta, result_output=True)
+    eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, lambda1 = opt.lambda1, lambda2 = opt.lambda2, alpha_epsilon = opt.alpha_epsilon, alpha_eta = opt.alpha_eta, result_output=True)
