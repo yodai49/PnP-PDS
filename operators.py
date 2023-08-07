@@ -30,8 +30,10 @@ def get_adj_blur_operator(x, h):
 
 def get_observation_operators(path_kernel):
     def phi(x):
+        #return x
         return get_blur_operator(x, h)
     def adj_phi(x):
+        #return x
         return get_adj_blur_operator(x, h)
     
     h = scipy.io.loadmat(path_kernel)
@@ -65,8 +67,65 @@ def proj_l2_ball(x, alpha_epsilon, gaussian_nl, x_0):
         val = x_0 + epsilon * (x - x_0) / np.linalg.norm(x - x_0)
     return val
 
-def proj_l2_ball_dual(x, gamma2, alpha_epsilon, gaussian_nl, x_0):
-    return x - gamma2 * proj_l2_ball(x / gamma2, alpha_epsilon, gaussian_nl, x_0)
+def proj_l2_ball_dual(x, gamma, alpha_epsilon, gaussian_nl, x_0):
+    return x - gamma * proj_l2_ball(x / gamma, alpha_epsilon, gaussian_nl, x_0)
+
+def prox_l12(x, gamma):
+    myval = gamma/np.sqrt(np.sum(x*x, 0))
+    return np.fmax(1 - myval, 0) * x
+
+def prox_l12_dual(x, myLambda, gamma):
+    return x - gamma * prox_l12(x / gamma, myLambda / gamma)
+
+def D(x):
+    # input: x (COLOR, W, H)
+    # output: (COLOR*2, W, H)
+    x_v_cnt = np.shape(x)[1]
+    x_h_cnt = np.shape(x)[2]
+    x_v = np.concatenate([np.diff(x, n=1, axis=1)[:,0:x_v_cnt-1,:], np.zeros((3, 1, x_h_cnt))], 1)
+    x_h = np.concatenate([np.diff(x, n=1, axis=2)[:,:,0:x_h_cnt-1], np.zeros((3, x_v_cnt, 1))], 2)
+    
+#    val = np.concatenate([x_v, np.diff(x, n=1, axis=2)], 0)
+#    x_v = np.fmax(0, np.fmin(1, x_v))
+#    x_h = np.fmax(0, np.fmin(1, x_h))
+    val = np.concatenate([x_v, x_h], 0)
+#    val = np.fmax(0, np.fmin(1, val))
+
+    return val
+
+def D_T(x):
+    # input: x (COLOR*2, W, H)
+    # output: (COLOR, W, H)
+    x_v = x[0:3, :, :]
+    x_h = x[3:6, :, :]
+    x_v_cnt = np.shape(x_v)[1]
+    x_h_cnt = np.shape(x_h)[2]
+    x_v = np.concatenate([-x_v[:,0:1,:], -x_v[:, 1:x_v_cnt-1, :]+ x_v[:, 0:x_v_cnt-2, :], x_v[:,x_v_cnt-1:x_v_cnt,:]], 1)
+    x_h = np.concatenate([-x_h[:,:,0:1], -x_h[:, :, 1:x_h_cnt-1]+ x_h[:, :, 0:x_h_cnt-2], x_h[:,:,x_h_cnt-1:x_h_cnt]], 2)
+    #x_h = np.concatenate([-x_h[:,:,0:1], -np.diff(x_h, 1, 2)[:,:,0:x_h_cnt-2], x_h[:,:,x_h_cnt-1:x_h_cnt]], 2)
+    val = x_v + x_h
+
+#    x_v = np.fmin(1, np.fmax(0, x[0:3,:,:]))
+#    x_h = np.fmin(1 , np.fmax(0,x[3:6,:,:]))
+#    print(x.shape)
+#    print(np.diff(x_v, 1, 1).shape, np.diff(x_h, 1, 2).shape)
+#    x_v2 = np.copy(np.concatenate([-x_v[:,0:1,:], -np.diff(x_v, 1, 1)[:,0:x_v_cnt-2,:], x_v[:,x_v_cnt-1:x_v_cnt,:]], 1))
+#    x_h2 = np.copy(np.concatenate([-x_h[:,:,0:1], -np.diff(x_h, 1, 2)[:,:,0:x_h_cnt-2], x_h[:,:,x_h_cnt-1:x_h_cnt]], 2))
+#    print(x_v2.shape, x_h2.shape)
+#    val = -np.diff(x_v, n=1, axis=1, prepend=0) - np.diff(x_h, n=1, axis=2, prepend=0)
+#    val = x_v2 + x_h2
+#    x_v = np.concatenate([-np.copy(x_v[:,0:1,:]), np.copy(-x_v[:, 1:x_v_cnt-1, :]) + np.copy(x_v[:, 0:x_v_cnt-2, :]), np.copy(x_v[:,x_v_cnt-1:x_v_cnt,:])], 1)
+   # x_v = np.concatenate([-x_v[:,0:1,:], -x_v[:, 1:x_v_cnt-1, :], x_v[:,x_v_cnt-1:x_v_cnt,:]], 1)
+    #x_v = np.fmax(0, np.fmin(1, x_v))
+    #x_h = np.fmax(0, np.fmin(1, x_h))
+    #val = np.fmax(0, np.fmin(1, val))
+    
+    # MATLABコード　COLORが3次元目にある
+    #n1
+    #result = cat(1, -z(1, :, :, 1), -z(2:n1-1, :, :, 1) + z(1:n1-2, :, :, 1), z(n1-1, :, :, 1)) 
+    #       + cat(2, -z(:, 1, :, 2), -z(:, 2:n2-1, :, 2) + z(:, 1:n2-2, :, 2), z(:, n2-1, :, 2));
+
+    return val
 
 #return np.fmax(0, np.fmin(1, x))  # box constraint
 #return np.sign(x) * np.fmax(0, np.abs(x) - lambda1 * gamma1) # prox of l1

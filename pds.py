@@ -9,6 +9,8 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_eta, alpha_epsilo
     # test algorithm (FBS / PDS)
     x_n = x_0
     y_n = np.zeros(x_0.shape)
+    y1_n = np.concatenate([np.zeros(x_0.shape), np.zeros(x_0.shape)], 0)
+    y2_n = np.zeros(x_0.shape)
     s_n = np.zeros(x_0.shape)
     c = np.zeros(max_iter)
     psnr_data = np.zeros(max_iter)
@@ -25,9 +27,15 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_eta, alpha_epsilo
             y_n = op.proj_l2_ball_dual(y_n + gamma2 * (phi(2 * x_n - x_prev) + 2 * s_n - s_prev), gamma2, alpha_epsilon, gaussian_nl, x_0)
         elif(method == 'PDS_with_sparse_noise'):
             # Primal-dual spilitting algorithm with HTV
-            x_n = op.denoise(x_n - gamma1 * (op.grad_x_l2(x_n, s_n, phi, adj_phi, x_0) + adj_phi(y_n)), path_prox)
-            s_n = op.proj_l1_ball(s_n - gamma1 * (op.grad_s_l2(x_n, s_n, phi, x_0) + y_n), alpha_eta, sp_nl)
-            y_n = op.proj_l2_ball_dual(y_n + gamma2 * (phi(2 * x_n - x_prev) + 2 * s_n - s_prev), gamma2, alpha_epsilon, gaussian_nl, x_0)
+            myLambda = 0.008
+            x_n = x_n - gamma1 * (op.grad_x_l2(x_n, s_n, phi, adj_phi, x_0) + op.D_T(y1_n) + adj_phi(y2_n))
+            s_n = op.proj_l1_ball(s_n - gamma1 * (op.grad_s_l2(x_n, s_n, phi, x_0) + y2_n), alpha_eta, sp_nl)
+#            y1_n = y1_n + gamma2 * op.D(2 * x_n - x_prev)
+#            y1_n = y1_n - gamma2 * op.prox_l12(y1_n / gamma2, myLambda / gamma2)
+#            y2_n = y2_n + gamma2 * (phi(2 * x_n - x_prev)+ 2 * s_n - s_prev)
+#            y2_n = y2_n - gamma2 * op.proj_l2_ball(y2_n / gamma2, alpha_epsilon, gaussian_nl, x_0)
+            y1_n = op.prox_l12_dual(y1_n + gamma2 * op.D(2 * x_n - x_prev), myLambda, gamma2)
+            y2_n = op.proj_l2_ball_dual(y2_n + gamma2 * (phi(2 * x_n - x_prev)+ 2 * s_n - s_prev), gamma2,alpha_epsilon, gaussian_nl, x_0)
         elif(method == 'PnP-PDS_with_sparse_noise'):
             # Primal-dual spilitting algorithm with denoiser
             x_n = op.denoise(x_n - gamma1 * (op.grad_x_l2(x_n, s_n, phi, adj_phi, x_0) + adj_phi(y_n)), path_prox)
@@ -39,6 +47,7 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_eta, alpha_epsilo
 
         c[i] = np.linalg.norm((x_n - x_prev).flatten()) / np.linalg.norm(x_0.flatten())
         psnr_data[i] = psnr(x_n, x_true)
+#        psnr_data[i] = np.linalg.norm(y1_n)
         print('Method:' , method, '  iter: ', i, ' / ', max_iter, ' PSNR: ', psnr_data[i])
     
     return x_n, s_n+0.5, c, psnr_data
