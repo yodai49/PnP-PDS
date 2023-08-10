@@ -80,10 +80,11 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
         #epsilon = np.linalg.norm(gaussian_noise) / np.sqrt(img_true.size) # oracle
         #print(epsilon)
         
-        img_sol, s_sol, _, psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_eta, alpha_epsilon, gaussian_nl, sp_nl, path_prox, max_iter, "PDS_with_sparse_noise")
+        img_sol, s_sol, _, psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_eta, alpha_epsilon, gaussian_nl, sp_nl, path_prox, max_iter, "ours-A")
+        print(np.linalg.norm(gaussian_nl * gaussian_noise))
 
 #        img_sol = op.D_T(op.D(img_true))
-        print("max:" , np.max(op.D(img_true))*255, "min:" , np.min(op.D(img_true))*255)
+#        print("max:" , np.max(op.D(img_true))*255, "min:" , np.min(op.D(img_true))*255)
         
         print(path_img)
         print('PSNR: ', psnr[-1])
@@ -107,6 +108,5 @@ if (__name__ == '__main__'):
     #grid_search(40)
     eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, lambda1 = opt.lambda1, lambda2 = opt.lambda2, alpha_epsilon = opt.alpha_epsilon, alpha_eta = opt.alpha_eta, result_output=True)
     #my_array=np.array([[[0, 3, 5], [1, 2, 1]],[[1, 2, 4], [4, 5, 1]],[[2, 5, 1], [6,7,3]],[[4, 5,1], [8,12,1]],[[9, 12,3],[12,13,1]],[[12, 21,12], [15,16,15]]])
-    #my_array=np.array([[[0, 1, 2], [3, 4, 5]], [[6, 7, 8], [9, 10, 11]], [[11, 12, 13], [14, 15, 16]]])
     #print(op.D_T(op.D(my_array)))
 #    print(op.prox_l12(my_array, 1))

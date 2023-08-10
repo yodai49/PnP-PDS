@@ -30,10 +30,8 @@ def get_adj_blur_operator(x, h):
 
 def get_observation_operators(path_kernel):
     def phi(x):
-        #return x
         return get_blur_operator(x, h)
     def adj_phi(x):
-        #return x
         return get_adj_blur_operator(x, h)
     
     h = scipy.io.loadmat(path_kernel)
@@ -52,30 +50,35 @@ def grad_s_l2(x, s, phi, x_0):
     
 def proj_l1_ball(x, alpha_eta, sp_nl):
     # Projection on l1 ball
+    #max(abs(x)-max(max((cumsum(sort(abs(x),1,'descend'),1)-alpha)./(1:size(x,1))),0),0).*sign(x); MATLAB
+
     eta = alpha_eta * 0.5 * x.size * sp_nl
     y = x.reshape((-1))
-    mymax = np.max((np.cumsum(np.sort(np.abs(y))[::-1])-eta)/(y.size))
-    y = np.fmax(np.abs(y)-np.fmax(mymax, 0), 0)*np.sign(y)
+        
+    mymax = np.max((np.cumsum(np.sort(np.abs(y))[::-1])-eta)/(np.arange(1, len(y) + 1)))
+    y = np.fmax(np.abs(y)-np.max(mymax, 0), 0)*np.sign(y)
     val = y.reshape(x.shape)
     return val
 
-def proj_l2_ball(x, alpha_epsilon, gaussian_nl, x_0):
-    # projection on l2 ball 
-    val  = x
-    epsilon = np.sqrt(x.size) * alpha_epsilon * gaussian_nl
+def proj_l2_ball(x, alpha_epsilon, gaussian_nl, sp_nl, x_0):
+    # projection on l2 ball
+    val = x
+    epsilon = np.sqrt(x.size * (1 - sp_nl)) * alpha_epsilon * gaussian_nl
+    print(epsilon)
+#    epsilon = alpha_epsilon
     if(np.linalg.norm(x - x_0) > epsilon):
         val = x_0 + epsilon * (x - x_0) / np.linalg.norm(x - x_0)
     return val
 
-def proj_l2_ball_dual(x, gamma, alpha_epsilon, gaussian_nl, x_0):
-    return x - gamma * proj_l2_ball(x / gamma, alpha_epsilon, gaussian_nl, x_0)
+#def proj_l2_ball_dual(x, gamma, alpha_epsilon, gaussian_nl, x_0):
+#    return x - gamma * proj_l2_ball(x / gamma, alpha_epsilon, gaussian_nl, x_0)
 
 def prox_l12(x, gamma):
     myval = gamma/np.sqrt(np.sum(x*x, 0))
     return np.fmax(1 - myval, 0) * x
 
-def prox_l12_dual(x, myLambda, gamma):
-    return x - gamma * prox_l12(x / gamma, myLambda / gamma)
+def prox_l12_dual(x, gamma):
+    return x - gamma * prox_l12(x / gamma, 1 / gamma)
 
 def D(x):
     # input: x (COLOR, W, H)
