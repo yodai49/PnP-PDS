@@ -18,8 +18,8 @@ parser.add_argument("--gamma2", type=float, default=1.99, help='step size for th
 parser.add_argument("--kernel", type=str, default='blur_1', help='kernel of the degradation measurement operator')
 parser.add_argument("--lambda1", type=float, default=0.1, help='parameter of the function g')
 parser.add_argument("--lambda2", type=float, default=0.1, help='parameter of the function h')
-parser.add_argument("--alpha_n", type=float, default=0.9, help='parameter of the l2 regularization')
-parser.add_argument("--alpha_s", type=float, default=0.9, help='parameter of the l1 regularization (for sparse noise)')
+parser.add_argument("--alpha_epsilon", type=float, default=0.9, help='parameter of the l2 regularization')
+parser.add_argument("--alpha_eta", type=float, default=0.9, help='parameter of the l1 regularization (for sparse noise)')
 parser.add_argument("--max_iter", type=int, default=1000, help='max iteration of the pds algorithm')
 parser.add_argument("--n_ch", type=int, default=3, help="channels")
 parser.add_argument("--gaussian_nl", type=float, default=0.01, help='gaussian noise level')
@@ -38,7 +38,7 @@ def grid_search(grid_num = 6):
         param_psnr[i] = 0
         param_epsilon_dash[i] = gridEpsilon
         print('epsilon_dash: ', gridEpsilon)
-        param_psnr[i], param_psnr_best[i] = eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, lambda1 = opt.lambda1, lambda2 = opt.lambda2, alpha_s = opt.alpha_s, alpha_n = gridEpsilon, result_output=False)
+        param_psnr[i], param_psnr_best[i] = eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, lambda1 = opt.lambda1, lambda2 = opt.lambda2, alpha_eta = opt.alpha_eta, alpha_epsilon = gridEpsilon, result_output=False)
     x = param_epsilon_dash.flatten()
     y = param_psnr.flatten()
     z = param_psnr_best.flatten()
@@ -56,7 +56,7 @@ def grid_search(grid_num = 6):
     plt.show()
 
 
-def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, gamma2 = 1.99, lambda1 = 0.1, alpha_n = 0.9, alpha_s = 0.9, lambda2 = 0.1, result_output = True):
+def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, gamma2 = 1.99, lambda1 = 0.1, alpha_epsilon = 0.9, alpha_eta = 0.9, lambda2 = 0.1, result_output = True):
     path_test = config['path_test']
     pattern_red = config['pattern_red']
     path_result = config['path_result']
@@ -80,7 +80,11 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
         #epsilon = np.linalg.norm(gaussian_noise) / np.sqrt(img_true.size) # oracle
         #print(epsilon)
         
-        img_sol, s_sol, _, psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gaussian_nl, sp_nl, path_prox, max_iter, "ours-B")
+        img_sol, s_sol, _, psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_eta, alpha_epsilon, gaussian_nl, sp_nl, path_prox, max_iter, "ours-A")
+        print(np.linalg.norm(gaussian_nl * gaussian_noise))
+
+#        img_sol = op.D_T(op.D(img_true))
+#        print("max:" , np.max(op.D(img_true))*255, "min:" , np.min(op.D(img_true))*255)
         
         print(path_img)
         print('PSNR: ', psnr[-1])
@@ -91,18 +95,18 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
 
     if(result_output):
         x = np.arange(0, max_iter, 1)
-        plt.title('PSNR')
+        plt.title('Convergence')
         #plt.gca().set_yscale('log')
         plt.plot(x, psnr)
         plt.xlabel('iteration')
-        plt.ylabel('PSNR')
+        plt.ylabel('c_n')
         plt.show()
 
     return psnr[-1], np.max(psnr)
 
 if (__name__ == '__main__'):
     #grid_search(40)
-    eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, lambda1 = opt.lambda1, lambda2 = opt.lambda2, alpha_n = opt.alpha_n, alpha_s = opt.alpha_s, result_output=True)
-#    my_array = np.array([1, 2, 3, 4, 5])
+    eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, lambda1 = opt.lambda1, lambda2 = opt.lambda2, alpha_epsilon = opt.alpha_epsilon, alpha_eta = opt.alpha_eta, result_output=True)
+    #my_array=np.array([[[0, 3, 5], [1, 2, 1]],[[1, 2, 4], [4, 5, 1]],[[2, 5, 1], [6,7,3]],[[4, 5,1], [8,12,1]],[[9, 12,3],[12,13,1]],[[12, 21,12], [15,16,15]]])
     #print(op.D_T(op.D(my_array)))
-#    print(op.proj_l1_ball(my_array, 0.1, 1))
+#    print(op.prox_l12(my_array, 1))
