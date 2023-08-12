@@ -80,7 +80,7 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
         #epsilon = np.linalg.norm(gaussian_noise) / np.sqrt(img_true.size) # oracle
         #print(epsilon)
         
-        img_sol, s_sol, _, psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gaussian_nl, sp_nl, path_prox, max_iter, "ours-B")
+        img_sol, s_sol, _, psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gaussian_nl, sp_nl, path_prox, max_iter, "comparisonB-1")
         
         print(path_img)
         print('PSNR: ', psnr[-1])
@@ -103,6 +103,3 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
 if (__name__ == '__main__'):
     #grid_search(40)
     eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, lambda1 = opt.lambda1, lambda2 = opt.lambda2, alpha_n = opt.alpha_n, alpha_s = opt.alpha_s, result_output=True)
-#    my_array = np.array([1, 2, 3, 4, 5])
-    #print(op.D_T(op.D(my_array)))
-#    print(op.proj_l1_ball(my_array, 0.1, 1))
