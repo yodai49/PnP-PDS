@@ -5,7 +5,7 @@ def psnr(img_1, img_2, data_range=1):
     mse = np.mean((img_1.astype(float) - img_2.astype(float)) ** 2)
     return 10 * np.log10((data_range ** 2) / mse)
 
-def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gaussian_nl, sp_nl, path_prox, max_iter, method="PDS_S"):
+def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gaussian_nl, sp_nl, path_prox, max_iter, method="ours-A"):
     # test algorithm
     x_n = x_0
     y_n = np.zeros(x_0.shape)
