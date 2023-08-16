@@ -18,7 +18,7 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gauss
         x_prev = x_n
         s_prev = s_n
 
-        if(method == 'ours-A'):
+        if(method == 'ours-A' or method == 'ours-C'):
             # Primal-dual spilitting algorithm with denoiser
             x_n = op.denoise(x_n - gamma1 * adj_phi(y_n), path_prox)
             y_n = y_n + gamma2 * phi(2 * x_n - x_prev)
@@ -26,7 +26,7 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gauss
         elif(method == 'comparisonA-1'):
             # Forward-backward spilitting algorithm with denoiser
             x_n = op.denoise(x_n - gamma1 * (op.grad_x_l2(x_n, np.zeros(x_n.shape), phi, adj_phi, x_0)), path_prox)
-        elif(method == 'comparisonA-2'):
+        elif(method == 'comparisonA-2' or method == 'comparisonC-2'):
             # Primal-dual spilitting algorithm with HTV
             x_n = x_n - gamma1 * (op.D_T(y1_n) + adj_phi(y2_n))
             y1_n = y1_n + gamma2 * op.D(2 * x_n - x_prev)
@@ -57,7 +57,6 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gauss
 
         c[i] = np.linalg.norm((x_n - x_prev).flatten()) / np.linalg.norm(x_0.flatten())
         psnr_data[i] = psnr(x_n, x_true)
-#        psnr_data[i] = np.linalg.norm(y1_n)
         print('Method:' , method, '  iter: ', i, ' / ', max_iter, ' PSNR: ', psnr_data[i])
-    
+
     return x_n, s_n+0.5, c, psnr_data

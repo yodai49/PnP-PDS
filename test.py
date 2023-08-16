@@ -16,13 +16,15 @@ parser.add_argument("--method", type=str, default='ours-A', help='method name')
 parser.add_argument("--architecture", type=str, default='DnCNN_nobn', help="architecture of network")
 parser.add_argument("--gamma1", type=float, default=1.99, help='step size for the primal problem')
 parser.add_argument("--gamma2", type=float, default=1.99, help='step size for the dual problem')
-parser.add_argument("--kernel", type=str, default='blur_1', help='kernel of the degradation measurement operator')
 parser.add_argument("--alpha_n", type=float, default=0.9, help='parameter of the l2 regularization')
 parser.add_argument("--alpha_s", type=float, default=0.9, help='parameter of the l1 regularization (for sparse noise)')
 parser.add_argument("--max_iter", type=int, default=1000, help='max iteration of the pds algorithm')
 parser.add_argument("--n_ch", type=int, default=3, help="channels")
 parser.add_argument("--gaussian_nl", type=float, default=0.01, help='gaussian noise level')
 parser.add_argument("--sp_nl", type=float, default=0.01, help='salt and pepper noise level')
+parser.add_argument("--deg_op", type=str, default='blur', help='degradation operator')
+parser.add_argument("--kernel", type=str, default='blur_1', help='kernel of the degradation measurement operator')
+parser.add_argument("--r", type=float, default=0.2, help='level of random sampling')
 parser.add_argument("--pth_config_file", type=str, default='config/setup.json')
 opt = parser.parse_args()
 with open(opt.pth_config_file, 'r') as f:
@@ -33,11 +35,11 @@ def grid_search(grid_num = 6):
     param_psnr_best = np.zeros((grid_num))
     param_epsilon_dash = np.zeros((grid_num))
     for i in range(0, grid_num):
-        gridEpsilon = 0.85 + (i / grid_num)*0.2
+        gridEpsilon = 0.7 + (i / grid_num)*0.3
         param_psnr[i] = 0
         param_epsilon_dash[i] = gridEpsilon
         print('epsilon_dash: ', gridEpsilon)
-        param_psnr[i], param_psnr_best[i] = eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, lambda1 = opt.lambda1, lambda2 = opt.lambda2, alpha_s = opt.alpha_s, alpha_n = gridEpsilon, result_output=False)
+        param_psnr[i], param_psnr_best[i] = eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, alpha_n = gridEpsilon, alpha_s = opt.alpha_s, result_output=False, method = opt.method)
     x = param_epsilon_dash.flatten()
     y = param_psnr.flatten()
     z = param_psnr_best.flatten()
@@ -69,7 +71,7 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
         img_true = np.asarray(img_true, dtype="float32")/255.
         img_true = np.moveaxis(img_true, -1, 0)
 
-        phi, adj_phi = get_observation_operators(path_kernel = path_kernel)
+        phi, adj_phi = get_observation_operators(operator = opt.deg_op, path_kernel = path_kernel, r = opt.r)
         gaussian_noise = np.random.randn(*img_true.shape)
         img_blur = phi(np.copy(img_true)) + gaussian_nl * gaussian_noise
         img_blur = add_salt_and_pepper_noise(img_blur, sp_nl)
@@ -100,5 +102,5 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
     return psnr[-1], np.max(psnr)
 
 if (__name__ == '__main__'):
-    #grid_search(40)
+    #grid_search(3)
     eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, alpha_n = opt.alpha_n, alpha_s = opt.alpha_s, result_output=True, method = opt.method)
