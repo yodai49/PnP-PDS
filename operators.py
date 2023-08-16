@@ -26,11 +26,30 @@ def get_adj_blur_operator(x, h):
         y[i, ...] = np.real(np.fft.ifft2(np.conj(h) * np.fft.fft2(x[i, ...])))
     return y[..., :-l+1, :-l+1]
 
-def get_observation_operators(path_kernel):
+def get_random_sampling_operator(x, r):
+    np.random.seed(1234)
+    w = x.shape[-2]
+    h = x.shape[-1]
+    degraded_cnt = round(w * h * (1-r))
+    Q = np.random.permutation(w * h)[:degraded_cnt]
+    for i in range(0,3):
+        X = x[i].flatten()
+        X[Q] = 0
+        x[i] = X.reshape(w, h)    
+    return x    
+
+def get_observation_operators(operator, path_kernel, r):
     def phi(x):
-        return get_blur_operator(x, h)
+        if(operator == 'blur'):
+            return get_blur_operator(x, h)
+        elif (operator == 'random_sampling'):
+            return get_random_sampling_operator(x, r)    
+                
     def adj_phi(x):
-        return get_adj_blur_operator(x, h)
+        if(operator == 'blur'):
+            return get_adj_blur_operator(x, h)
+        elif (operator == 'random_sampling'):
+            return get_random_sampling_operator(x, r)
     
     h = scipy.io.loadmat(path_kernel)
     h = np.array(h['blur'])
