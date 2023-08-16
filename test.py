@@ -12,12 +12,11 @@ import operators as op
 from utils.helpers import save_imgs, add_salt_and_pepper_noise
 
 parser = argparse.ArgumentParser(description="testing PnP-PDS")
+parser.add_argument("--method", type=str, default='ours-A', help='method name')
 parser.add_argument("--architecture", type=str, default='DnCNN_nobn', help="architecture of network")
 parser.add_argument("--gamma1", type=float, default=1.99, help='step size for the primal problem')
 parser.add_argument("--gamma2", type=float, default=1.99, help='step size for the dual problem')
 parser.add_argument("--kernel", type=str, default='blur_1', help='kernel of the degradation measurement operator')
-parser.add_argument("--lambda1", type=float, default=0.1, help='parameter of the function g')
-parser.add_argument("--lambda2", type=float, default=0.1, help='parameter of the function h')
 parser.add_argument("--alpha_n", type=float, default=0.9, help='parameter of the l2 regularization')
 parser.add_argument("--alpha_s", type=float, default=0.9, help='parameter of the l1 regularization (for sparse noise)')
 parser.add_argument("--max_iter", type=int, default=1000, help='max iteration of the pds algorithm')
@@ -56,7 +55,7 @@ def grid_search(grid_num = 6):
     plt.show()
 
 
-def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, gamma2 = 1.99, lambda1 = 0.1, alpha_n = 0.9, alpha_s = 0.9, lambda2 = 0.1, result_output = True):
+def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, gamma2 = 1.99, alpha_n = 0.9, alpha_s = 0.9, result_output = True, method = 'ours-A'):
     path_test = config['path_test']
     pattern_red = config['pattern_red']
     path_result = config['path_result']
@@ -80,7 +79,7 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
         #epsilon = np.linalg.norm(gaussian_noise) / np.sqrt(img_true.size) # oracle
         #print(epsilon)
         
-        img_sol, s_sol, _, psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gaussian_nl, sp_nl, path_prox, max_iter, "comparisonB-1")
+        img_sol, s_sol, _, psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gaussian_nl, sp_nl, path_prox, max_iter, method)
         
         print(path_img)
         print('PSNR: ', psnr[-1])
@@ -102,4 +101,4 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
 
 if (__name__ == '__main__'):
     #grid_search(40)
-    eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, lambda1 = opt.lambda1, lambda2 = opt.lambda2, alpha_n = opt.alpha_n, alpha_s = opt.alpha_s, result_output=True)
+    eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, alpha_n = opt.alpha_n, alpha_s = opt.alpha_s, result_output=True, method = opt.method)
