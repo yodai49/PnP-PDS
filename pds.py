@@ -23,7 +23,7 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gauss
             x_n = op.denoise(x_n - gamma1 * adj_phi(y_n), path_prox)
             y_n = y_n + gamma2 * phi(2 * x_n - x_prev)
             y_n = y_n - gamma2 * op.proj_l2_ball(y_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_0)
-        elif(method == 'comparisonA-1'):
+        elif(method == 'comparisonA-1' or method == 'comparisonC-1'):
             # Forward-backward spilitting algorithm with denoiser
             x_n = op.denoise(x_n - gamma1 * (op.grad_x_l2(x_n, np.zeros(x_n.shape), phi, adj_phi, x_0)), path_prox)
         elif(method == 'comparisonA-2' or method == 'comparisonC-2'):
