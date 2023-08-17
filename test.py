@@ -82,7 +82,7 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
         #print(epsilon)
         
         img_sol, s_sol, _, psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gaussian_nl, sp_nl, path_prox, max_iter, method)
-        
+
         print(path_img)
         print('PSNR: ', psnr[-1])
         if(result_output):
