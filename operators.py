@@ -27,16 +27,23 @@ def get_adj_blur_operator(x, h):
     return y[..., :-l+1, :-l+1]
 
 def get_random_sampling_operator(x, r):
-    np.random.seed(1234)
+    #np.random.seed(1234)
     w = x.shape[-2]
     h = x.shape[-1]
     degraded_cnt = round(w * h * (1-r))
-    Q = np.random.permutation(w * h)[:degraded_cnt]
+    Q = np.random.RandomState(seed=1234).permutation(w * h)[:degraded_cnt]
+    y = np.zeros(x.shape)
     for i in range(0,3):
-        X = x[i].flatten()
+#        x[i] = (x[i].flatten()[Q] = 0).reshape(w, h)
+        X = np.copy(x[i])
+        X = X.flatten()
         X[Q] = 0
-        x[i] = X.reshape(w, h)    
-    return x    
+        y[i] = X.reshape(w, h)
+#        X = np.copy(x[i])
+#        X = X.flatten()
+#        X[Q] = 0
+#        x[i] = np.copy(X.reshape(w, h))
+    return y 
 
 def get_observation_operators(operator, path_kernel, r):
     def phi(x):
@@ -82,11 +89,9 @@ def proj_l2_ball(x, alpha_n, gaussian_nl, sp_nl, x_0):
     return val
 
 def prox_l12(x, gamma):
-    myval = gamma/np.sqrt(np.sum(x*x, 0))
-    return np.fmax(1 - myval, 0) * x
-
-def prox_box_constraint(x):
-    return np.fmax(0, np.fmin(1, x))
+#    myval = gamma/np.sqrt(np.sum(x*x, 0))
+    myval = gamma/np.sqrt(np.sum(np.sum(x*x, 2), 1))
+    return np.max(1 - myval, 0) * x
 
 def D(x):
     # input: x (COLOR, W, H)
