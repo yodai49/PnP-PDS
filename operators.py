@@ -85,8 +85,8 @@ def prox_l12(x, gamma):
     myval = gamma/np.sqrt(np.sum(x*x, 0))
     return np.fmax(1 - myval, 0) * x
 
-def prox_l12_dual(x, gamma):
-    return x - gamma * prox_l12(x / gamma, 1 / gamma)
+def prox_box_constraint(x):
+    return np.fmax(0, np.fmin(1, x))
 
 def D(x):
     # input: x (COLOR, W, H)
