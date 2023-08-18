@@ -34,15 +34,10 @@ def get_random_sampling_operator(x, r):
     Q = np.random.RandomState(seed=1234).permutation(w * h)[:degraded_cnt]
     y = np.zeros(x.shape)
     for i in range(0,3):
-#        x[i] = (x[i].flatten()[Q] = 0).reshape(w, h)
         X = np.copy(x[i])
         X = X.flatten()
         X[Q] = 0
         y[i] = X.reshape(w, h)
-#        X = np.copy(x[i])
-#        X = X.flatten()
-#        X[Q] = 0
-#        x[i] = np.copy(X.reshape(w, h))
     return y 
 
 def get_observation_operators(operator, path_kernel, r):
