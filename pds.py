@@ -51,13 +51,6 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gauss
             y1_n = y1_n - gamma2 * op.prox_l12(y1_n / gamma2, gamma2)
             y2_n = y2_n + gamma2 * (phi(2 * x_n - x_prev) + 2 * s_n - s_prev)
             y2_n = y2_n - gamma2 * op.proj_l2_ball(y2_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_0)
-        elif(method == 'comparisonC-3'):
-            # Primal-dual spilitting algorithm with HTV (l2-based formulation)
-            mylambda = 4000
-            x_n = op.prox_box_constraint(x_n - gamma1 * (op.grad_x_l2(x_n, np.zeros(x_n.shape), phi, adj_phi, x_0) + op.D_T(y1_n)))
-            y1_n = y1_n + gamma2 * op.D(2 * x_n - x_prev)
-            y1_n = y1_n - gamma2 * op.prox_l12(y1_n / gamma2, mylambda * gamma2)
-
         else:
             print("Unknown method:", method)
             return x_0, c
