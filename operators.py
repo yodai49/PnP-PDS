@@ -65,7 +65,7 @@ def grad_x_l2(x, s, phi, adj_phi, x_0):
     return 2 * adj_phi(phi(x) + s - x_0)
 
 def grad_s_l2(x, s, phi, x_0):
-    return 2 * (phi(x) + s - x_0)
+    return (phi(x) + s - x_0)
     
 def proj_l1_ball(x, alpha_s, sp_nl):
     # Projection on l1 ball
@@ -78,14 +78,14 @@ def proj_l1_ball(x, alpha_s, sp_nl):
 def proj_l2_ball(x, alpha_n, gaussian_nl, sp_nl, x_0):
     # projection on l2 ball
     epsilon = np.sqrt(x.size * (1 - sp_nl)) * alpha_n * gaussian_nl
-    val = x
+    val = np.copy(x)
     if(np.linalg.norm(x - x_0) > epsilon):
         val = x_0 + epsilon * (x - x_0) / np.linalg.norm(x - x_0)
     return val
 
 def prox_l12(x, gamma):
-#    myval = gamma/np.sqrt(np.sum(x*x, 0))
-    myval = gamma/np.sqrt(np.sum(np.sum(x*x, 2), 1))
+    myval = gamma/np.sqrt(np.sum(x*x, 0))
+ #    myval = gamma/np.sqrt(np.sum(np.sum(x*x, 2), 1))
     return np.max(1 - myval, 0) * x
 
 def D(x):

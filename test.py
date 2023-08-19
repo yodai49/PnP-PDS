@@ -57,21 +57,24 @@ def grid_search(grid_num = 6):
     plt.show()
 
 
-def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, gamma2 = 1.99, alpha_n = 0.9, alpha_s = 0.9, result_output = True, method = 'ours-A'):
+def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, gamma2 = 1.99, alpha_n = 0.9, alpha_s = 0.9, result_output = True, method = 'ours-A', architecture = '', r=0.5, deg_op = 'blur'):
     path_test = config['path_test']
     pattern_red = config['pattern_red']
     path_result = config['path_result']
 
     path_images = sorted(glob.glob(os.path.join(path_test, pattern_red)))
     path_kernel = config['root_folder'] + 'blur_models/' + opt.kernel + '.mat'
-    path_prox = config['root_folder'] + 'nn/' + opt.architecture + '.pth'
+    path_prox = config['root_folder'] + 'nn/' + architecture + '.pth'
+
+    psnr = np.zeros((len(path_images)))
+    cnt = 0
 
     for path_img in path_images:
         img_true = cv2.imread(path_img)
         img_true = np.asarray(img_true, dtype="float32")/255.
         img_true = np.moveaxis(img_true, -1, 0)
 
-        phi, adj_phi = get_observation_operators(operator = opt.deg_op, path_kernel = path_kernel, r = opt.r)
+        phi, adj_phi = get_observation_operators(operator = deg_op, path_kernel = path_kernel, r = r)
         gaussian_noise = np.random.randn(*img_true.shape)
         img_blur = phi(np.copy(img_true)) + gaussian_nl * gaussian_noise
         img_blur = add_salt_and_pepper_noise(img_blur, sp_nl)
@@ -81,26 +84,34 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
         #epsilon = np.linalg.norm(gaussian_noise) / np.sqrt(img_true.size) # oracle
         #print(epsilon)
         
-        img_sol, s_sol, _, psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gaussian_nl, sp_nl, path_prox, max_iter, method)
+        img_sol, s_sol, temp_c, temp_psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gaussian_nl, sp_nl, path_prox, max_iter, method)
 
         print(path_img)
-        print('PSNR: ', psnr[-1])
+        psnr[cnt] = temp_psnr[-1]
+        print('PSNR: ', psnr[cnt])
+
+        pictures = [img_true, img_blur, img_sol, s_sol]
+        path_pictures = [path_result + path_img[path_img.rfind('\\'):] + '_true',  path_result +  path_img[path_img.rfind('\\'):] + '_blur', path_result + path_img[path_img.rfind('\\'):]+ '_sol', path_result + path_img[path_img.rfind('\\'):]+ '_sp_noise']
+        save_imgs(pictures = pictures, path_pictures = path_pictures, format = '.png')
+
+        np.save(path_result + 'PSNR_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:], temp_psnr)
+        np.save(path_result + 'c_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:], temp_c)
+
+        cnt=cnt+1
+
         if(result_output):
-            pictures = [img_true, img_blur, img_sol, s_sol]
-            path_pictures = [path_result + path_img[path_img.rfind('\\'):] + '_true',  path_result +  path_img[path_img.rfind('\\'):] + '_blur', path_result + path_img[path_img.rfind('\\'):]+ '_sol', path_result + path_img[path_img.rfind('\\'):]+ '_sp_noise']
-            save_imgs(pictures = pictures, path_pictures = path_pictures, format = '.png')
+            x = np.arange(0, max_iter, 1)
+            plt.title('PSNR')
+            plt.gca().set_yscale('log')
+            plt.plot(x, temp_c)
+            plt.xlabel('iteration')
+            plt.ylabel('PSNR')
+            plt.show()
 
-    if(result_output):
-        x = np.arange(0, max_iter, 1)
-        plt.title('PSNR')
-        #plt.gca().set_yscale('log')
-        plt.plot(x, psnr)
-        plt.xlabel('iteration')
-        plt.ylabel('PSNR')
-        plt.show()
-
-    return psnr[-1], np.max(psnr)
+    return psnr
 
 if (__name__ == '__main__'):
     #grid_search(3)
-    eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, alpha_n = opt.alpha_n, alpha_s = opt.alpha_s, result_output=True, method = opt.method)
+    eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, alpha_n = opt.alpha_n, alpha_s = opt.alpha_s, result_output=True, architecture = opt.architecture, method = opt.method)
+
+    #python test.py --max_iter=2000 --gamma1=0.49 --gamma2=0.99 --gaussian_nl=0.01 --sp_nl=0.0 --architecture=preDnCNN_nobn_nch_3_nlev_0.01 --alpha_n=0.95 --method=comparisonC-1 --r=0.7 --deg_op=random_sampling

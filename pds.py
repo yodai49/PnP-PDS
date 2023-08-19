@@ -55,8 +55,10 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gauss
             print("Unknown method:", method)
             return x_0, c
 
-        c[i] = np.linalg.norm((x_n - x_prev).flatten()) / np.linalg.norm(x_0.flatten())
+        c[i] = np.linalg.norm((x_n - x_prev).flatten()) / np.linalg.norm(x_prev.flatten())
+#        c[i] = np.linalg.norm(phi(x_n) - x_0)
         psnr_data[i] = psnr(x_n, x_true)
-        print('Method:' , method, '  iter: ', i, ' / ', max_iter, ' PSNR: ', psnr_data[i])
+        if(i % 100 == 0):
+            print('Method:' , method, '  iter: ', i, ' / ', max_iter, ' PSNR: ', psnr_data[i])
 
     return x_n, s_n+0.5, c, psnr_data
