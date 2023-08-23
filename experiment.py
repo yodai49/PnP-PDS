@@ -36,7 +36,7 @@ def plot_graph():
     #fig_1.plot(x, y_3, marker='v', markersize=10, markevery = 250,  markeredgewidth=1., markeredgecolor='k', color="b", label="PnP-FBS")
 
     fig_1.set_xlabel(r"iterations")
-    fig_1.set_ylabel(r"$d_n$")
+    fig_1.set_ylabel(r"$c_n$")
     plt.yscale('log')
     plt.grid(color="gainsboro")
 
@@ -47,6 +47,6 @@ def plot_graph():
     fig.savefig('./ICASSP-result/test_1.eps', bbox_inches="tight", pad_inches=0.05)
     
 if (__name__ == '__main__'):
-    plot_graph()
-    #psnr = eval_restoration(gaussian_nl=0.005, sp_nl=0, max_iter = 300, gamma1 = 0.99, gamma2 = 0.99, r=0.8, alpha_n = 0.95, alpha_s = 0, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'comparisonA-1')
-    #print(psnr, np.mean(psnr))
+    #plot_graph()
+    psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0, max_iter = 2000, gamma1 = 0.99, gamma2 = 0.99, r=0.8, alpha_n = 0.95, alpha_s = 0, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'random_sampling', method = 'ours-C')
+    print(psnr, np.mean(psnr))

@@ -90,8 +90,8 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
         psnr[cnt] = temp_psnr[-1]
         print('PSNR: ', psnr[cnt])
 
-        pictures = [img_true, img_blur, img_sol, s_sol]
-        path_pictures = [path_result + path_img[path_img.rfind('\\'):] + '_true',  path_result +  path_img[path_img.rfind('\\'):] + '_blur', path_result + path_img[path_img.rfind('\\'):]+ '_sol', path_result + path_img[path_img.rfind('\\'):]+ '_sp_noise']
+        pictures = [img_true, img_blur, img_sol]
+        path_pictures = [path_result + path_img[path_img.rfind('\\'):] + '_true_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl),  path_result +  path_img[path_img.rfind('\\'):] + '_blur_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl), path_result + path_img[path_img.rfind('\\'):]+ '_sol_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl)]
         save_imgs(pictures = pictures, path_pictures = path_pictures, format = '.png')
 
         np.save(path_result + 'PSNR_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:], temp_psnr)

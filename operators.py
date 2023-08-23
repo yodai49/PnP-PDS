@@ -85,7 +85,6 @@ def proj_l2_ball(x, alpha_n, gaussian_nl, sp_nl, x_0):
 
 def prox_l12(x, gamma):
     myval = gamma/np.sqrt(np.sum(x*x, 0))
- #    myval = gamma/np.sqrt(np.sum(np.sum(x*x, 2), 1))
     return np.max(1 - myval, 0) * x
 
 def D(x):
