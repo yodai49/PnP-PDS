@@ -22,9 +22,9 @@ def plot_graph():
     plt.rcParams["legend.markerscale"] = 1 # 点がある場合のmarker scale
     plt.rcParams["legend.borderaxespad"] = 0. # 凡例の端とグラフの端を合わせる
     
-    every = 25
-    y_1 = np.load('./ICASSP-result/PSNR_comparisonA-1(blur)_nl0.01_079.jpeg.npy')
-    y_2 = np.load('./ICASSP-result/PSNR_ours-A(blur)_nl0.01_079.jpeg.npy')
+    every = 100
+    y_1 = np.load('./ICASSP-result/PSNR_comparisonC-1(random_sampling)_nl0.01_008.jpeg.npy')
+    y_2 = np.load('./ICASSP-result/PSNR_ours-C(random_sampling)_nl0.01_008.jpeg.npy')
     #y_3 = np.load('./ICASSP-result/PSNR_comparisonC-2(random_sampling)_nl0.01_077.jpeg.npy')
     x = np.linspace(0, y_1.size, (int)(y_1.size / every))
     y_1 = y_1[::every]
@@ -38,7 +38,7 @@ def plot_graph():
     #fig_1.plot(x, y_3, marker='v', markersize=10, markevery = 250,  markeredgewidth=1., markeredgecolor='k', color="b", label="PnP-FBS")
 
     fig_1.set_xlabel(r"iterations")
-    fig_1.set_ylabel(r"PSNR")
+    fig_1.set_ylabel(r"PSNR[dB]")
 #    plt.yscale('log')
     plt.grid(color="gainsboro")
 
