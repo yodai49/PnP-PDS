@@ -1,5 +1,6 @@
 import numpy as np
 import operators as op
+import bm3d
 
 def psnr(img_1, img_2, data_range=1):
     mse = np.mean((img_1.astype(float) - img_2.astype(float)) ** 2)
@@ -51,6 +52,25 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gauss
             y1_n = y1_n - gamma2 * op.prox_l12(y1_n / gamma2, gamma2)
             y2_n = y2_n + gamma2 * (phi(2 * x_n - x_prev) + 2 * s_n - s_prev)
             y2_n = y2_n - gamma2 * op.proj_l2_ball(y2_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_0)
+        elif(method == 'BM3D-PnP-FBS'):
+            # Forward-backward spilitting algorithm with denoiser
+            x_n = x_n - gamma1 * op.grad_x_l2(x_n, np.zeros(x_n.shape) , phi, adj_phi, x_0)
+            x_n = np.moveaxis(x_n, 0, 2)
+            x_n = bm3d.bm3d_rgb(x_n, sigma_psd=0.01)
+            x_n = np.moveaxis(x_n, -1, 0)
+        elif(method == 'BM3D-PnP-PDS'):
+            # Primal-dual spilitting algorithm with denoiser
+            x_n = x_n - gamma1 *adj_phi(y_n)
+            x_n = np.moveaxis(x_n, 0, 2)
+            x_n = bm3d.bm3d_rgb(x_n, sigma_psd=0.01)
+            x_n = np.moveaxis(x_n, -1, 0)
+            y_n = y_n + gamma2 * phi(2 * x_n - x_prev)
+            y_n = y_n - gamma2 * op.proj_l2_ball(y_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_0)
+        elif(method == 'SCUNet-PnP-PDS'):
+            # Primal-dual spilitting algorithm with denoiser
+            x_n = op.denoise(x_n - gamma1 * adj_phi(y_n), path_prox)
+            y_n = y_n + gamma2 * phi(2 * x_n - x_prev)
+            y_n = y_n - gamma2 * op.proj_l2_ball(y_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_0)
         else:
             print("Unknown method:", method)
             return x_0, c
@@ -58,7 +78,7 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gauss
         c[i] = np.linalg.norm((x_n - x_prev).flatten()) / np.linalg.norm(x_0.flatten())
 #        c[i] = np.linalg.norm(phi(x_n) - x_0)
         psnr_data[i] = psnr(x_n, x_true)
-        if(i % 100 == 0):
+        if(i % 100 != 0):
             print('Method:' , method, '  iter: ', i, ' / ', max_iter, ' PSNR: ', psnr_data[i])
 
     return x_n, s_n+0.5, c, psnr_data
