@@ -57,7 +57,7 @@ def grid_search(grid_num = 6):
     plt.show()
 
 
-def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, gamma2 = 1.99, alpha_n = 0.9, alpha_s = 0.9, result_output = True, method = 'ours-A', architecture = '', r=0.5, deg_op = 'blur'):
+def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, gamma2 = 1.99, alpha_n = 0.9, alpha_s = 0.9, myLambda=1, result_output = True, method = 'ours-A', architecture = '', r=0.5, deg_op = 'blur'):
     path_test = config['path_test']
     pattern_red = config['pattern_red']
     path_result = config['path_result']
@@ -67,6 +67,7 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
     path_prox = config['root_folder'] + 'nn/' + architecture + '.pth'
 
     psnr = np.zeros((len(path_images)))
+    np.random.seed(1234)
     cnt = 0
 
     for path_img in path_images:
@@ -84,7 +85,7 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
         #epsilon = np.linalg.norm(gaussian_noise) / np.sqrt(img_true.size) # oracle
         #print(epsilon)
         
-        img_sol, s_sol, temp_c, temp_psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gaussian_nl, sp_nl, path_prox, max_iter, method)
+        img_sol, s_sol, temp_c, temp_psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, gaussian_nl, sp_nl, path_prox, max_iter, method)
 
         print(path_img)
         psnr[cnt] = temp_psnr[-1]
@@ -108,10 +109,15 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
             plt.ylabel('PSNR')
             plt.show()
 
+    params = {'mean_PSNR':np.mean(psnr), 'PSNR':psnr, 'gamma1': gamma1, 'gamma2': gamma2, 'alpha_n': alpha_n, 'gaussian_nl':gaussian_nl, 'max_iter':max_iter, 'myLambda': myLambda}
+    np.save(path_result + 'RESULT_AND_PARAMS_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:], params)
+
     return psnr
 
 if (__name__ == '__main__'):
     #grid_search(3)
-    eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, alpha_n = opt.alpha_n, alpha_s = opt.alpha_s, result_output=True, architecture = opt.architecture, method = opt.method)
+
+    psnr = eval_restoration(gaussian_nl=0.025, sp_nl=0, max_iter = 400, gamma1 = 0.99, gamma2 = 0.99, r=0.8, alpha_n = 0.95, alpha_s = 0, myLambda=1, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-A')
+    #eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, alpha_n = opt.alpha_n, alpha_s = opt.alpha_s, result_output=True, architecture = opt.architecture, method = opt.method)
 
     #python test.py --max_iter=2000 --gamma1=0.49 --gamma2=0.99 --gaussian_nl=0.01 --sp_nl=0.0 --architecture=preDnCNN_nobn_nch_3_nlev_0.01 --alpha_n=0.95 --method=comparisonC-1 --r=0.7 --deg_op=random_sampling
