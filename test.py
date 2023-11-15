@@ -80,7 +80,7 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_
         phi, adj_phi = get_observation_operators(operator = deg_op, path_kernel = path_kernel, r = r)
         img_blur = phi(img_true)
         img_blur = add_gaussian_noise(img_blur, gaussian_nl)
-        if(poisson_noise):
+        if(poisson_noise == True):
             img_blur = apply_poisson_noise(img_blur, poisson_alpha)
         img_blur = add_salt_and_pepper_noise(img_blur, sp_nl)
         
@@ -89,7 +89,7 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_
         #epsilon = np.linalg.norm(gaussian_noise) / np.sqrt(img_true.size) # oracle
         #print(epsilon)
         
-        img_sol, s_sol, temp_c, temp_psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, gaussian_nl, sp_nl, path_prox, max_iter, method)
+        img_sol, s_sol, temp_c, temp_psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, gaussian_nl, sp_nl, poisson_alpha, path_prox, max_iter, method)
 
         print(path_img)
         psnr[cnt] = temp_psnr[-1]
@@ -97,7 +97,6 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_
 
         pictures = [img_true, img_blur, img_sol]
         timestamp = str(datetime.datetime.now().strftime("%Y%m%d-%H%M"))
-        print(timestamp)
         path_pictures = [path_result + path_img[path_img.rfind('\\'):] + '_true_' + method + '(' + deg_op + ')_gaussiannl' + str(gaussian_nl) + '(' + timestamp + ')',  path_result +  path_img[path_img.rfind('\\'):] + '_blur_' + method + '(' + deg_op + ')_gaussian-nl' + str(gaussian_nl) + '(' + timestamp + ')', path_result + path_img[path_img.rfind('\\'):]+ '_sol_'  + method + '(' + deg_op + ')_gaussian-nl' + str(gaussian_nl) + '(' + timestamp + ')']
         save_imgs(pictures = pictures, path_pictures = path_pictures, format = '.png')
 
@@ -122,7 +121,7 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_
 
 if (__name__ == '__main__'):
     #grid_search(24)
-
-    psnr = eval_restoration(gaussian_nl=0.0, sp_nl=0.0, poisson_noise=True, poisson_alpha=0.01, max_iter = 40, gamma1 = 0.99, gamma2 = 0.1, r=1, alpha_n = 0.9, alpha_s = 1, myLambda=1, result_output=True, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-B')
+    psnr = eval_restoration(gaussian_nl=0.0, sp_nl=0, poisson_noise=True, poisson_alpha = 0.01, max_iter = 400, gamma1 = 0.99, gamma2 = 0.1, r=1, alpha_n = 0.9, alpha_s = 0, myLambda=1, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-C')
+ #   psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.0, poisson_noise=False, poisson_alpha=0.01, max_iter = 400, gamma1 = 0.09, gamma2 = 0.1, r=1, alpha_n = 0.9, alpha_s = 1, myLambda=1, result_output=True, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-A')
 
     #python test.py --max_iter=2000 --gamma1=0.49 --gamma2=0.99 --gaussian_nl=0.01 --sp_nl=0.0 --architecture=preDnCNN_nobn_nch_3_nlev_0.01 --alpha_n=0.95 --method=comparisonC-1 --r=0.7 --deg_op=random_sampling

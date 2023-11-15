@@ -87,6 +87,10 @@ def prox_l12(x, gamma):
     myval = gamma/np.sqrt(np.sum(x*x, 0))
     return np.max(1 - myval, 0) * x
 
+def prox_GKL(x, gamma, alpha, x_0):
+    val = 0.5 * (x - gamma * alpha + np.sqrt((x - gamma * alpha) * (x - gamma * alpha) + 4 * gamma * x_0))
+    return val
+
 def D(x):
     # input: x (COLOR, W, H)
     # output: (COLOR*2, W, H)
