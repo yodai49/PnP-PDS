@@ -24,3 +24,19 @@ def add_salt_and_pepper_noise(img, noise_level):
     img[1][(sp_noise_x[noise_cnt:],sp_noise_y[noise_cnt:])] = 0
     img[2][(sp_noise_x[noise_cnt:],sp_noise_y[noise_cnt:])] = 0
     return img
+
+def add_gaussian_noise(img, noise_level):
+    np.random.seed(1234)
+    gaussian_noise = noise_level * np.random.randn(*img.shape)
+    return img + gaussian_noise
+
+def apply_poisson_noise(img, alpha):
+    np.random.seed(1234)
+    img = np.random.poisson(img/alpha)*alpha
+#    img = img.transpose(2, 1, 0)
+#    for i, attr in enumerate(img):
+#        for j, attr in enumerate(img[i]):
+#            for k, attr in enumerate(img[i][j]):
+#                img[i][j][k] = np.random.poisson(img[i][j][k]/alpha, 1)*alpha
+#    img = img.transpose(2, 1, 0)
+    return img
