@@ -39,11 +39,9 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLam
             y_n = y_n - gamma2 * op.proj_l2_ball(y_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_0)
         elif(method == 'ours-C'):
             # Primal-dual spilitting algorithm with denoiser (Poisson noise)
-#            x_n = op.denoise(x_n, path_prox)
             x_n = op.denoise(x_n - gamma1 * adj_phi(y_n), path_prox)
-            y_n = y_n + gamma2 * phi(2 * x_n - x_prev)
-#            y_n = y_n - gamma2 * myLambda * op.prox_GKL(y_n / (gamma2 * myLambda), 1 / (gamma2* myLambda), poisson_alpha, x_0)
-            y_n = y_n - gamma2 * op.prox_GKL(y_n / (gamma2), myLambda / (gamma2), poisson_alpha, x_0)
+            y_n = y_n + gamma2  * phi(2 * x_n - x_prev)
+            y_n = y_n - gamma2 * op.prox_GKL(y_n / gamma2, myLambda / gamma2, poisson_alpha, x_0)
         elif(method == 'comparisonA-1'):
             # Forward-backward spilitting algorithm with denoiser
             x_n = op.denoise(x_n - gamma1 * myLambda * 0.5 * (op.grad_x_l2(x_n, np.zeros(x_n.shape), phi, adj_phi, x_0)), path_prox)
