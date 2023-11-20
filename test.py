@@ -8,6 +8,7 @@ import os
 
 from operators import get_observation_operators
 from pds import test_iter
+import pds
 import operators as op
 from utils.helpers import save_imgs, add_salt_and_pepper_noise
 
@@ -67,6 +68,7 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
     path_prox = config['root_folder'] + 'nn/' + architecture + '.pth'
 
     psnr = np.zeros((len(path_images)))
+    np.random.seed(1234)
     cnt = 0
 
     for path_img in path_images:
