@@ -34,14 +34,14 @@ with open(opt.pth_config_file, 'r') as f:
 def grid_search(grid_num = 6):
     param_psnr = np.zeros((grid_num))
     param_psnr_best = np.zeros((grid_num))
-    param_epsilon_dash = np.zeros((grid_num))
+    param_val_dash = np.zeros((grid_num))
     for i in range(0, grid_num):
-        gridEpsilon = 0.6 + (i / grid_num)*0.6
+        gridVal = 110 + i
         param_psnr[i] = 0
-        param_epsilon_dash[i] = gridEpsilon
-        print('epsilon_dash: ', gridEpsilon)
-        param_psnr[i] = eval_restoration(gaussian_nl=0.01, sp_nl=0, poisson_noise=False, max_iter = 400, gamma1 = 0.99, gamma2 = 0.1, r=1, alpha_n = gridEpsilon, alpha_s = 0, myLambda=1, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-A')
-    x = param_epsilon_dash.flatten()
+        param_val_dash[i] = gridVal
+        print('epsilon_dash: ', gridVal)
+        param_psnr[i] = eval_restoration(gaussian_nl=0.0, sp_nl=0, poisson_noise=True, poisson_alpha = 120, max_iter = 400, gamma1 = 0.0001, gamma2 = 9999, r=1, alpha_n = 0.9, alpha_s = 0, myLambda=gridVal, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'Id', method = 'ours-C')
+    x = param_val_dash.flatten()
     y = param_psnr.flatten()
     #z = param_psnr_best.flatten()
     #fig = plt.figure(figsize=(8, 8))
@@ -97,11 +97,11 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_
 
         pictures = [img_true, img_blur, img_sol]
         timestamp = str(datetime.datetime.now().strftime("%Y%m%d-%H%M"))
-        path_pictures = [path_result + path_img[path_img.rfind('\\'):] + '_true_' + method + '(' + deg_op + ')_gaussiannl' + str(gaussian_nl) + '(' + timestamp + ')',  path_result +  path_img[path_img.rfind('\\'):] + '_blur_' + method + '(' + deg_op + ')_gaussian-nl' + str(gaussian_nl) + '(' + timestamp + ')', path_result + path_img[path_img.rfind('\\'):]+ '_sol_'  + method + '(' + deg_op + ')_gaussian-nl' + str(gaussian_nl) + '(' + timestamp + ')']
+        path_pictures = [path_result + path_img[path_img.rfind('\\'):] + '_TRUE_' + method + '(' + deg_op + ')_gaussiannl' + str(gaussian_nl) + '(' + timestamp + ')',  path_result +  path_img[path_img.rfind('\\'):] + '_OBSRV_' + method + '(' + deg_op + ')_gaussian-nl' + str(gaussian_nl) + '(' + timestamp + ')', path_result + path_img[path_img.rfind('\\'):]+ '_RESULT_'  + method + '(' + deg_op + ')_gaussian-nl' + str(gaussian_nl) + '(' + timestamp + ')']
         save_imgs(pictures = pictures, path_pictures = path_pictures, format = '.png')
 
-        np.save(path_result + 'PSNR_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:], temp_psnr)
-        np.save(path_result + 'c_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:], temp_c)
+        np.save(path_result + 'PSNR_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:]  + '(' + timestamp + ')', temp_psnr)
+        np.save(path_result + 'c_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:]  + '(' + timestamp + ')', temp_c)
 
         cnt=cnt+1
 
@@ -115,13 +115,14 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_
             plt.show()
 
     params = {'mean_PSNR':np.mean(psnr), 'PSNR':psnr, 'gamma1': gamma1, 'gamma2': gamma2, 'alpha_n': alpha_n, 'gaussian_nl':gaussian_nl, 'sp_nl':sp_nl, 'alpha_n':alpha_n, 'alpha_s':alpha_s, 'max_iter':max_iter, 'myLambda': myLambda, 'r':r, deg_op:'deg_op'}
-    np.save(path_result + 'RESULT_AND_PARAMS_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:], params)
+    np.save(path_result + 'RESULT_AND_PARAMS_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_'  + path_img[-8:] + '(' + timestamp + ')', params)
 
     return np.mean(psnr)
 
 if (__name__ == '__main__'):
-    #grid_search(24)
-    psnr = eval_restoration(gaussian_nl=0.0, sp_nl=0, poisson_noise=True, poisson_alpha = 0.01, max_iter = 400, gamma1 = 0.99, gamma2 = 0.1, r=1, alpha_n = 0.9, alpha_s = 0, myLambda=1, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-C')
+#    grid_search(20)
+    psnr = eval_restoration(gaussian_nl=0.0, sp_nl=0, poisson_noise=True, poisson_alpha = 120, max_iter = 300, gamma1 = 0.000004, gamma2 = 242000, r=1, alpha_n = 0.9, alpha_s = 0, myLambda=1, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'Id', method = 'ours-C')
+
  #   psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.0, poisson_noise=False, poisson_alpha=0.01, max_iter = 400, gamma1 = 0.09, gamma2 = 0.1, r=1, alpha_n = 0.9, alpha_s = 1, myLambda=1, result_output=True, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-A')
 
     #python test.py --max_iter=2000 --gamma1=0.49 --gamma2=0.99 --gaussian_nl=0.01 --sp_nl=0.0 --architecture=preDnCNN_nobn_nch_3_nlev_0.01 --alpha_n=0.95 --method=comparisonC-1 --r=0.7 --deg_op=random_sampling

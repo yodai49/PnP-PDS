@@ -17,12 +17,12 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLam
     # gaussian_nl, sp_nl　ガウシアンノイズの分散とスパースノイズの重畳率
     # path_prox ガウシアンデノイザーのパス
     # max_iter アルゴリズムのイタレーション数
-    # method 手法　ours:提案手法　comparison 比較手法　1はPnP-FBS, 2は制約条件版のTV, 3は和版のTV
-    #              A: 観測＋ガウシアンノイズ　B: ガウシアンノイズ＋スパースノイズ　C:ポアソンノイズ
+    # method 手法　ours:提案手法　comparison 比較手法（1はPnP-FBS, 2は制約条件版のTV, 3は和版のTV）
+    #              A: 観測＋ガウシアンノイズ　B: 観測＋ガウシアンノイズ＋スパースノイズ　C:観測＋ポアソンノイズ
     #               ours-A  comparisonA-1  などのように指定する
 
     x_n = x_0
-    y_n = np.zeros(x_0.shape) # 次元が画像と同じ双対変数の1つめにも用いる（ポアソンノイズ用）
+    y_n = np.zeros(x_0.shape) # 次元が画像と同じ双対変数
     y1_n = np.concatenate([np.zeros(x_0.shape), np.zeros(x_0.shape)], 0)
     y2_n = np.zeros(x_0.shape)
     s_n = np.zeros(x_0.shape)
@@ -39,10 +39,11 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLam
             y_n = y_n - gamma2 * op.proj_l2_ball(y_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_0)
         elif(method == 'ours-C'):
             # Primal-dual spilitting algorithm with denoiser (Poisson noise)
+#            x_n = op.denoise(x_n, path_prox)
             x_n = op.denoise(x_n - gamma1 * adj_phi(y_n), path_prox)
-            myLambda = 12345
-            y_n = y_n + gamma2 * myLambda * phi(2 * x_n - x_prev)
-            y_n = y_n - gamma2 * myLambda * op.prox_GKL(y_n / (gamma2*myLambda), 1 / (gamma2*myLambda), poisson_alpha, x_0)
+            y_n = y_n + gamma2 * phi(2 * x_n - x_prev)
+#            y_n = y_n - gamma2 * myLambda * op.prox_GKL(y_n / (gamma2 * myLambda), 1 / (gamma2* myLambda), poisson_alpha, x_0)
+            y_n = y_n - gamma2 * op.prox_GKL(y_n / (gamma2), myLambda / (gamma2), poisson_alpha, x_0)
         elif(method == 'comparisonA-1'):
             # Forward-backward spilitting algorithm with denoiser
             x_n = op.denoise(x_n - gamma1 * myLambda * 0.5 * (op.grad_x_l2(x_n, np.zeros(x_n.shape), phi, adj_phi, x_0)), path_prox)
@@ -102,7 +103,7 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLam
         c[i] = np.linalg.norm((x_n - x_prev).flatten()) / np.linalg.norm(x_0.flatten())
 #        c[i] = np.linalg.norm(phi(x_n) - x_0)
         psnr_data[i] = psnr(x_n, x_true)
-        if(i % 100 != 0):
+        if(i % 10 == 0):
             print('Method:' , method, '  iter: ', i, ' / ', max_iter, ' PSNR: ', psnr_data[i])
 
     return x_n, s_n+0.5, c, psnr_data

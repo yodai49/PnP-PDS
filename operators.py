@@ -27,7 +27,6 @@ def get_adj_blur_operator(x, h):
     return y[..., :-l+1, :-l+1]
 
 def get_random_sampling_operator(x, r):
-    #np.random.seed(1234)
     w = x.shape[-2]
     h = x.shape[-1]
     degraded_cnt = round(w * h * (1-r))
@@ -45,13 +44,17 @@ def get_observation_operators(operator, path_kernel, r):
         if(operator == 'blur'):
             return get_blur_operator(x, h)
         elif (operator == 'random_sampling'):
-            return get_random_sampling_operator(x, r)    
+            return get_random_sampling_operator(x, r)  
+        elif (operator == 'Id'):
+            return  x
                 
     def adj_phi(x):
         if(operator == 'blur'):
             return get_adj_blur_operator(x, h)
         elif (operator == 'random_sampling'):
             return get_random_sampling_operator(x, r)
+        elif (operator == 'Id'):
+            return  x
     
     h = scipy.io.loadmat(path_kernel)
     h = np.array(h['blur'])
@@ -84,12 +87,11 @@ def proj_l2_ball(x, alpha_n, gaussian_nl, sp_nl, x_0):
     return val
 
 def prox_l12(x, gamma):
-    myval = gamma/np.sqrt(np.sum(x*x, 0))
-    return np.max(1 - myval, 0) * x
+    val = gamma/np.sqrt(np.sum(x*x, 0))
+    return np.max(1 - val, 0) * x
 
 def prox_GKL(x, gamma, alpha, x_0):
-    val = 0.5 * (x - gamma * alpha + np.sqrt((x - gamma * alpha) * (x - gamma * alpha) + 4 * gamma * x_0))
-    return val
+    return 0.5 * (x - gamma * alpha + np.sqrt(np.square(x - gamma * alpha) + 4 * gamma * x_0))
 
 def D(x):
     # input: x (COLOR, W, H)

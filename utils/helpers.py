@@ -32,11 +32,16 @@ def add_gaussian_noise(img, noise_level):
 
 def apply_poisson_noise(img, alpha):
     np.random.seed(1234)
-    img = np.random.poisson(img/alpha)*alpha
+#    img = img * 255
 #    img = img.transpose(2, 1, 0)
 #    for i, attr in enumerate(img):
 #        for j, attr in enumerate(img[i]):
+#            average_in_pixel = (img[i][j][0] + img[i][j][1] + img[i][j][2])/3
+#            pixel_with_poisson_noise = np.random.poisson(average_in_pixel * alpha, 1)/alpha
 #            for k, attr in enumerate(img[i][j]):
-#                img[i][j][k] = np.random.poisson(img[i][j][k]/alpha, 1)*alpha
+#                img[i][j][k] = pixel_with_poisson_noise
 #    img = img.transpose(2, 1, 0)
-    return img
+    val = np.random.poisson(img * alpha)/alpha
+#    print(val[0][0])
+#    img = img / 255
+    return val
