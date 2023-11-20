@@ -5,12 +5,13 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import datetime
 
 from operators import get_observation_operators
 from pds import test_iter
 import pds
 import operators as op
-from utils.helpers import save_imgs, add_salt_and_pepper_noise
+from utils.helpers import save_imgs, add_salt_and_pepper_noise, add_gaussian_noise, apply_poisson_noise
 
 parser = argparse.ArgumentParser(description="testing PnP-PDS")
 parser.add_argument("--method", type=str, default='ours-A', help='method name')
@@ -34,16 +35,16 @@ with open(opt.pth_config_file, 'r') as f:
 def grid_search(grid_num = 6):
     param_psnr = np.zeros((grid_num))
     param_psnr_best = np.zeros((grid_num))
-    param_epsilon_dash = np.zeros((grid_num))
+    param_val_dash = np.zeros((grid_num))
     for i in range(0, grid_num):
-        gridEpsilon = 0.7 + (i / grid_num)*0.3
+        gridVal = 110 + i
         param_psnr[i] = 0
-        param_epsilon_dash[i] = gridEpsilon
-        print('epsilon_dash: ', gridEpsilon)
-        param_psnr[i], param_psnr_best[i] = eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, alpha_n = gridEpsilon, alpha_s = opt.alpha_s, result_output=False, method = opt.method)
-    x = param_epsilon_dash.flatten()
+        param_val_dash[i] = gridVal
+        print('epsilon_dash: ', gridVal)
+        param_psnr[i] = eval_restoration(gaussian_nl=0.0, sp_nl=0, poisson_noise=True, poisson_alpha = 120, max_iter = 400, gamma1 = 0.0001, gamma2 = 9999, r=1, alpha_n = 0.9, alpha_s = 0, myLambda=gridVal, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'Id', method = 'ours-C')
+    x = param_val_dash.flatten()
     y = param_psnr.flatten()
-    z = param_psnr_best.flatten()
+    #z = param_psnr_best.flatten()
     #fig = plt.figure(figsize=(8, 8))
     #ax = fig.add_subplot(111, projection='3d')
     
@@ -51,14 +52,16 @@ def grid_search(grid_num = 6):
     plt.title('Convergence')
     #plt.gca().set_yscale('log')
     plt.scatter(x, y)
-    plt.scatter(x, z)
+    #plt.scatter(x, z)
     plt.xlabel('epsilon')
     plt.ylabel('PSNR')
 
     plt.show()
 
 
-def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 = 1.99, gamma2 = 1.99, alpha_n = 0.9, alpha_s = 0.9, result_output = True, method = 'ours-A', architecture = '', r=0.5, deg_op = 'blur'):
+def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_noise = True, poisson_alpha = 0.1, gamma1 = 1.99, gamma2 = 1.99, alpha_n = 0.9, alpha_s = 0.9, myLambda=1, result_output = True, method = 'ours-A', architecture = '', r=0.5, deg_op = 'blur'):
+    # 戻り値：psnr（すべての画像の平均値）
+
     path_test = config['path_test']
     pattern_red = config['pattern_red']
     path_result = config['path_result']
@@ -67,8 +70,7 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
     path_kernel = config['root_folder'] + 'blur_models/' + opt.kernel + '.mat'
     path_prox = config['root_folder'] + 'nn/' + architecture + '.pth'
 
-    psnr = np.zeros((len(path_images)))
-    np.random.seed(1234)
+    psnr = np.zeros((len(path_images))) # 各画像のイタレーション終了時のPSNRを格納した配列
     cnt = 0
 
     for path_img in path_images:
@@ -77,8 +79,10 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
         img_true = np.moveaxis(img_true, -1, 0)
 
         phi, adj_phi = get_observation_operators(operator = deg_op, path_kernel = path_kernel, r = r)
-        gaussian_noise = np.random.randn(*img_true.shape)
-        img_blur = phi(np.copy(img_true)) + gaussian_nl * gaussian_noise
+        img_blur = phi(img_true)
+        img_blur = add_gaussian_noise(img_blur, gaussian_nl)
+        if(poisson_noise == True):
+            img_blur = apply_poisson_noise(img_blur, poisson_alpha)
         img_blur = add_salt_and_pepper_noise(img_blur, sp_nl)
         
         x_0 = np.copy(img_blur)
@@ -86,34 +90,40 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, gamma1 =
         #epsilon = np.linalg.norm(gaussian_noise) / np.sqrt(img_true.size) # oracle
         #print(epsilon)
         
-        img_sol, s_sol, temp_c, temp_psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, gaussian_nl, sp_nl, path_prox, max_iter, method)
+        img_sol, s_sol, temp_c, temp_psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, gaussian_nl, sp_nl, poisson_alpha, path_prox, max_iter, method)
 
         print(path_img)
         psnr[cnt] = temp_psnr[-1]
         print('PSNR: ', psnr[cnt])
 
         pictures = [img_true, img_blur, img_sol]
-        path_pictures = [path_result + path_img[path_img.rfind('\\'):] + '_true_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl),  path_result +  path_img[path_img.rfind('\\'):] + '_blur_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl), path_result + path_img[path_img.rfind('\\'):]+ '_sol_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl)]
+        timestamp = str(datetime.datetime.now().strftime("%Y%m%d-%H%M"))
+        path_pictures = [path_result + path_img[path_img.rfind('\\'):] + '_TRUE_' + method + '(' + deg_op + ')_gaussiannl' + str(gaussian_nl) + '(' + timestamp + ')',  path_result +  path_img[path_img.rfind('\\'):] + '_OBSRV_' + method + '(' + deg_op + ')_gaussian-nl' + str(gaussian_nl) + '(' + timestamp + ')', path_result + path_img[path_img.rfind('\\'):]+ '_RESULT_'  + method + '(' + deg_op + ')_gaussian-nl' + str(gaussian_nl) + '(' + timestamp + ')']
         save_imgs(pictures = pictures, path_pictures = path_pictures, format = '.png')
 
-        np.save(path_result + 'PSNR_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:], temp_psnr)
-        np.save(path_result + 'c_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:], temp_c)
+        np.save(path_result + 'PSNR_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:]  + '(' + timestamp + ')', temp_psnr)
+        np.save(path_result + 'c_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:]  + '(' + timestamp + ')', temp_c)
 
         cnt=cnt+1
 
         if(result_output):
             x = np.arange(0, max_iter, 1)
             plt.title('PSNR')
-            plt.gca().set_yscale('log')
-            plt.plot(x, temp_c)
+           #plt.gca().set_yscale('log')
+            plt.plot(x, temp_psnr)
             plt.xlabel('iteration')
             plt.ylabel('PSNR')
             plt.show()
 
-    return psnr
+    params = {'mean_PSNR':np.mean(psnr), 'PSNR':psnr, 'gamma1': gamma1, 'gamma2': gamma2, 'alpha_n': alpha_n, 'gaussian_nl':gaussian_nl, 'sp_nl':sp_nl, 'alpha_n':alpha_n, 'alpha_s':alpha_s, 'max_iter':max_iter, 'myLambda': myLambda, 'r':r, deg_op:'deg_op'}
+    np.save(path_result + 'RESULT_AND_PARAMS_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_'  + path_img[-8:] + '(' + timestamp + ')', params)
+
+    return np.mean(psnr)
 
 if (__name__ == '__main__'):
-    #grid_search(3)
-    eval_restoration(gaussian_nl=opt.gaussian_nl, sp_nl=opt.sp_nl, max_iter = opt.max_iter, gamma1 = opt.gamma1, gamma2 = opt.gamma2, alpha_n = opt.alpha_n, alpha_s = opt.alpha_s, result_output=True, architecture = opt.architecture, method = opt.method)
+#    grid_search(20)
+    psnr = eval_restoration(gaussian_nl=0.0, sp_nl=0, poisson_noise=True, poisson_alpha = 120, max_iter = 300, gamma1 = 0.000004, gamma2 = 242000, r=1, alpha_n = 0.9, alpha_s = 0, myLambda=1, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'Id', method = 'ours-C')
+
+ #   psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.0, poisson_noise=False, poisson_alpha=0.01, max_iter = 400, gamma1 = 0.09, gamma2 = 0.1, r=1, alpha_n = 0.9, alpha_s = 1, myLambda=1, result_output=True, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-A')
 
     #python test.py --max_iter=2000 --gamma1=0.49 --gamma2=0.99 --gaussian_nl=0.01 --sp_nl=0.0 --architecture=preDnCNN_nobn_nch_3_nlev_0.01 --alpha_n=0.95 --method=comparisonC-1 --r=0.7 --deg_op=random_sampling

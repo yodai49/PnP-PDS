@@ -1,6 +1,5 @@
-from test import eval_restoration
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 def plot_graph():
     ## Thanks to https://qiita.com/MENDY/items/fe9b0c50383d8b2fd919
@@ -100,26 +99,8 @@ def plot_graph():
 
     outputfileName = "general_result"
     # save
-    fig.savefig('./ICASSP-result/' + outputfileName + '.png', bbox_inches="tight", pad_inches=0.05)
-    fig.savefig('./ICASSP-result/' + outputfileName + '.eps', bbox_inches="tight", pad_inches=0.05)
-    
+    fig.savefig('./ICASSP-result/test_1.png', bbox_inches="tight", pad_inches=0.05)
+    fig.savefig('./ICASSP-result/test_1.eps', bbox_inches="tight", pad_inches=0.05)
+
 if (__name__ == '__main__'):
     plot_graph()
-#    psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0, max_iter = 300, gamma1 = 0.99, gamma2 = 0.1, r=0.8, alpha_n = 0.9, alpha_s = 0, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-A')
-#    print(psnr, np.mean(psnr))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_BM3D-PnP-FBS(blur)_nl0.02_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_BM3D-PnP-PDS(random_sampling)_nl0.02_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_ours-A(blur)_nl0.02_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_ours-A(random_sampling)_nl0.005_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_ours-A(random_sampling)_nl0.01_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_ours-A(random_sampling)_nl0.02_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_comparisonA-2(blur)_nl0.015_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_BM3D-PnP-FBS(blur)_nl0.015_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_BM3D-PnP-PDS(blur)_nl0.015_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_comparisonA-1(blur)_nl0.05_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_ours-A(blur)_nl0.05_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_comparisonA-2(random_sampling)_nl0.015_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_BM3D-PnP-FBS(random_sampling)_nl0.015_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_BM3D-PnP-PDS(random_sampling)_nl0.015_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_comparisonA-1(random_sampling)_nl0.015_265.jpeg.npy', allow_pickle=True))
-#    print(np.load('./ICASSP-result/RESULT_AND_PARAMS_ours-A(random_sampling)_nl0.015_265.jpeg.npy', allow_pickle=True))
