@@ -9,7 +9,6 @@ import datetime
 
 from operators import get_observation_operators
 from pds import test_iter
-import pds
 import operators as op
 from utils.helpers import save_imgs, add_salt_and_pepper_noise, add_gaussian_noise, apply_poisson_noise
 

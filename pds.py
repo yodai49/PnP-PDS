@@ -37,11 +37,6 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLam
             x_n = op.denoise(x_n - gamma1 * adj_phi(y_n), path_prox)
             y_n = y_n + gamma2 * phi(2 * x_n - x_prev)
             y_n = y_n - gamma2 * op.proj_l2_ball(y_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_0)
-        elif(method == 'comparisonA-1' or method == 'comparisonC-1'):
-            # Forward-backward splitting algorithm with denoiser
-            x_n = op.denoise(x_n - gamma1 * (op.grad_x_l2(x_n, np.zeros(x_n.shape), phi, adj_phi, x_0)), path_prox)
-        elif(method == 'comparisonA-2' or method == 'comparisonC-2'):
-            # Primal-dual splitting algorithm with HTV
         elif(method == 'ours-C'):
             # Primal-dual spilitting algorithm with denoiser (Poisson noise)
 #            x_n = op.denoise(x_n, path_prox)
@@ -58,13 +53,11 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLam
             y1_n = y1_n + gamma2 * op.D(2 * x_n - x_prev)
             y1_n = y1_n - gamma2 * op.prox_l12(y1_n / gamma2, gamma2)
             y2_n = y2_n + gamma2 * (phi(2 * x_n - x_prev))
-            y2_n = y2_n - gamma2 * op.proj_l2_ball(y2_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_0)     
             y2_n = y2_n - gamma2 * op.proj_l2_ball(y2_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_0)
         elif(method == 'comparisonA-3'):
             # Primal-dual splitting with HTV (additive formulation):
             x_n = x_n - gamma1 * (adj_phi(phi(x_n)-x_0) + op.D_T(y1_n))
             y1_n = y1_n + gamma2 * op.D(2 * x_n - x_prev)
-            y1_n = y1_n - gamma2 * op.prox_l12(y1_n / gamma2, gamma2)            
             y1_n = y1_n - gamma2 * op.prox_l12(y1_n / gamma2, gamma2)   
         elif(method == 'ours-B'):
             # Primal-dual spilitting algorithm with denoiser  (Gaussian noise + sparse noise)
