@@ -58,7 +58,7 @@ def grid_search(grid_num = 6):
     plt.show()
 
 
-def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_noise = True, poisson_alpha = 0.1, gamma1 = 1.99, gamma2 = 1.99, alpha_n = 0.9, alpha_s = 0.9, myLambda=1, result_output = True, method = 'ours-A', architecture = '', r=0.5, deg_op = 'blur'):
+def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_noise = True, poisson_alpha = 1, gamma1 = 1.99, gamma2 = 1.99, alpha_n = 0.9, alpha_s = 0.9, myLambda=1, result_output = True, method = 'ours-A', architecture = '', r=0.5, deg_op = 'blur', ch = 3):
     # 戻り値：psnr（すべての画像の平均値）
 
     path_test = config['path_test']
@@ -75,27 +75,35 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_
     for path_img in path_images:
         img_true = cv2.imread(path_img)
         img_true = np.asarray(img_true, dtype="float32")/255.
-        img_true = np.moveaxis(img_true, -1, 0)
+        if(ch == 1):
+            # グレースケール化
+            img_true = cv2.cvtColor(img_true, cv2.COLOR_BGR2GRAY)
+        elif(ch == 3):
+            # 3×高さ×幅　の順番にする
+            img_true = np.moveaxis(img_true, -1, 0)
 
         phi, adj_phi = get_observation_operators(operator = deg_op, path_kernel = path_kernel, r = r)
-        img_blur = phi(img_true)
-        img_blur = add_gaussian_noise(img_blur, gaussian_nl)
+        img_obsrv = phi(img_true)
+        img_obsrv = add_gaussian_noise(img_obsrv, gaussian_nl)
         if(poisson_noise == True):
-            img_blur = apply_poisson_noise(img_blur, poisson_alpha)
-        img_blur = add_salt_and_pepper_noise(img_blur, sp_nl)
+            img_obsrv = apply_poisson_noise(img_obsrv, poisson_alpha)
+        img_obsrv = add_salt_and_pepper_noise(img_obsrv, sp_nl)
         
-        x_0 = np.copy(img_blur)
+        x_0 = np.copy(img_obsrv)
         
         #epsilon = np.linalg.norm(gaussian_noise) / np.sqrt(img_true.size) # oracle
         #print(epsilon)
         
-        img_sol, s_sol, temp_c, temp_psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, gaussian_nl, sp_nl, poisson_alpha, path_prox, max_iter, method)
+        img_sol, s_sol, temp_c, temp_psnr = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, gaussian_nl, sp_nl, poisson_alpha, path_prox, max_iter, method, ch)
 
         print(path_img)
         psnr[cnt] = temp_psnr[-1]
         print('PSNR: ', psnr[cnt])
 
-        pictures = [img_true, img_blur, img_sol]
+        if(poisson_noise):
+            # 明るさを元と揃える
+            img_obsrv = img_obsrv / poisson_alpha
+        pictures = [img_true, img_obsrv, img_sol]
         timestamp = str(datetime.datetime.now().strftime("%Y%m%d-%H%M"))
         path_pictures = [path_result + path_img[path_img.rfind('\\'):] + '_TRUE_' + method + '(' + deg_op + ')_gaussiannl' + str(gaussian_nl) + '(' + timestamp + ')',  path_result +  path_img[path_img.rfind('\\'):] + '_OBSRV_' + method + '(' + deg_op + ')_gaussian-nl' + str(gaussian_nl) + '(' + timestamp + ')', path_result + path_img[path_img.rfind('\\'):]+ '_RESULT_'  + method + '(' + deg_op + ')_gaussian-nl' + str(gaussian_nl) + '(' + timestamp + ')']
         save_imgs(pictures = pictures, path_pictures = path_pictures, format = '.png')
@@ -121,8 +129,15 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_
 
 if (__name__ == '__main__'):
 #    grid_search(20)
-    psnr = eval_restoration(gaussian_nl=0.0, sp_nl=0, poisson_noise=True, poisson_alpha = 120, max_iter = 300, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0, myLambda=0.5, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'Id', method = 'ours-C')
-
- #   psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.0, poisson_noise=False, poisson_alpha=0.01, max_iter = 400, gamma1 = 0.09, gamma2 = 0.1, r=1, alpha_n = 0.9, alpha_s = 1, myLambda=1, result_output=True, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-A')
-
-    #python test.py --max_iter=2000 --gamma1=0.49 --gamma2=0.99 --gaussian_nl=0.01 --sp_nl=0.0 --architecture=preDnCNN_nobn_nch_3_nlev_0.01 --alpha_n=0.95 --method=comparisonC-1 --r=0.7 --deg_op=random_sampling
+    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 300, max_iter = 800, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=True, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-2', ch = 1)
+    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 300, max_iter = 800, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=True, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'ours-C', ch = 1)
+#     psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.1, poisson_noise=False, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.1, gamma2 = 0.9, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'comparisonB-1', ch = 3)
+#     psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.1, poisson_noise=False, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.1, gamma2 = 0.9, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'comparisonB-2', ch = 3)
+#     psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.1, poisson_noise=False, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.1, gamma2 = 0.9, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'comparisonB-3', ch = 3)
+#     psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.1, poisson_noise=False, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.1, gamma2 = 0.9, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'random_sampling', method = 'ours-B', ch = 3)
+#     psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.1, poisson_noise=False, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.1, gamma2 = 0.9, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonB-1', ch = 3)
+#     psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.1, poisson_noise=False, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.1, gamma2 = 0.9, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonB-2', ch = 3)
+#     psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.1, poisson_noise=False, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.1, gamma2 = 0.9, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonB-3', ch = 3)
+#    psnr = eval_restoration(gaussian_nl=0.0, sp_nl=0, poisson_noise=True, poisson_alpha = 120, max_iter = 300, gamma1 = 0.1, gamma2 = 9, r=1, alpha_n = 0.9, alpha_s = 0, myLambda=0.0005, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'Id', method = 'ours-C')
+#    psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.0, poisson_noise=False, poisson_alpha=0.01, max_iter = 400, gamma1 = 0.09, gamma2 = 0.1, r=1, alpha_n = 0.9, alpha_s = 1, myLambda=1, result_output=True, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-A')
+#    python test.py --max_iter=2000 --gamma1=0.49 --gamma2=0.99 --gaussian_nl=0.01 --sp_nl=0.0 --architecture=preDnCNN_nobn_nch_3_nlev_0.01 --alpha_n=0.95 --method=comparisonC-1 --r=0.7 --deg_op=random_sampling

@@ -21,9 +21,9 @@ def plot_graph():
     plt.rcParams["legend.markerscale"] = 1 # 点がある場合のmarker scale
     plt.rcParams["legend.borderaxespad"] = 0. # 凡例の端とグラフの端を合わせる
     
-    every = 100
-    y_1 = np.load('./ICASSP-result/PSNR_comparisonC-1(random_sampling)_nl0.01_008.jpeg.npy')
-    y_2 = np.load('./ICASSP-result/PSNR_ours-C(random_sampling)_nl0.01_008.jpeg.npy')
+    every = 20
+    y_1 = np.load('./result-PDS/PSNR_comparisonC-2(blur)_nl0.0_364.jpeg(20231128-1822).npy')
+    y_2 = np.load('./result-PDS/PSNR_ours-C(blur)_nl0.0_364.jpeg(20231128-1823).npy')
     #y_3 = np.load('./ICASSP-result/PSNR_comparisonC-2(random_sampling)_nl0.01_077.jpeg.npy')
     x = np.linspace(0, y_1.size, (int)(y_1.size / every))
     y_1 = y_1[::every]
@@ -32,8 +32,8 @@ def plot_graph():
     # plot
     fig = plt.figure()
     fig_1 = fig.add_subplot(111)
-    fig_1.plot(x, y_1, marker='o', markersize=7, markevery = 1, markeredgewidth=1., markeredgecolor='k', color="r", label="PnP-FBS")
-    fig_1.plot(x, y_2, marker='x', markersize=7, markevery = 1,  markeredgewidth=1., markeredgecolor='k', color="b", label="PnP-PDS")
+    fig_1.plot(x, y_1, marker='o', markersize=7, markevery = 1, markeredgewidth=1., markeredgecolor='k', color="r", label="PnP-ADMM (DnCNN)")
+    fig_1.plot(x, y_2, marker='x', markersize=7, markevery = 1,  markeredgewidth=1., markeredgecolor='k', color="b", label="PnP-PDS (DnCNN)")
     #fig_1.plot(x, y_3, marker='v', markersize=10, markevery = 250,  markeredgewidth=1., markeredgecolor='k', color="b", label="PnP-FBS")
 
     fig_1.set_xlabel(r"iterations")
@@ -44,8 +44,8 @@ def plot_graph():
     fig_1.legend(ncol=3, bbox_to_anchor=(0., 1.025, 1., 0.102), loc=3)
 
     # save
-    fig.savefig('./ICASSP-result/test_1.png', bbox_inches="tight", pad_inches=0.05)
-    fig.savefig('./ICASSP-result/test_1.eps', bbox_inches="tight", pad_inches=0.05)
+    fig.savefig('./ICASSP-result/test.png', bbox_inches="tight", pad_inches=0.05)
+    fig.savefig('./ICASSP-result/test.eps', bbox_inches="tight", pad_inches=0.05)
 
 if (__name__ == '__main__'):
     plot_graph()

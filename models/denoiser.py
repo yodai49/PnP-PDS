@@ -7,9 +7,9 @@ cuda = True if torch.cuda.is_available() else False
 Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 
 class Denoiser:
-    def __init__(self, file_name):
+    def __init__(self, file_name, ch):
         self.cost = 0
-        self.network = load_network(file_name, cuda=torch.cuda.is_available(), channels = 3)
+        self.network = load_network(file_name, cuda=torch.cuda.is_available(), channels = ch)
 
     def denoise(self, x):
         out = apply_model(x, self.network)
