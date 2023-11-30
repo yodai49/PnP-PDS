@@ -1,6 +1,7 @@
 import numpy as np
 import operators as op
 import bm3d
+import time
 
 def psnr(img_1, img_2, data_range=1):
     mse = np.mean((img_1.astype(float) - img_2.astype(float)) ** 2)
@@ -30,6 +31,7 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLam
     d_n = np.zeros(x_0.shape)
     c = np.zeros(max_iter)
     psnr_data = np.zeros(max_iter)
+    start_time = time.process_time()
     for i in range(max_iter):
         x_prev = x_n
         s_prev = s_n
@@ -79,6 +81,12 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLam
             x_n = np.moveaxis(x_n, -1, 0)
             y_n = y_n + gamma2 * phi(2 * x_n - x_prev)
             y_n = y_n - gamma2 * op.proj_l2_ball(y_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_0)
+        elif(method == 'comparisonA-6'):
+            # DnCNN RED
+            # https://arxiv.org/pdf/1611.02862.pdf のsigmaをgamma1にlambdaをmyLambdaに置き換えた
+            x_n = op.denoise(x_n, path_prox, ch)
+            mu = 2 / (1/gamma1**2 + myLambda)
+            x_n = x_prev - mu * ((1 / gamma1**2) * adj_phi(phi(x_prev) - x_0) + myLambda * (x_prev - x_n))
         elif(method == 'comparisonB-1'):
             # DnCNN-PnP-FBS (additive formulation)
             x_n = op.denoise(x_n - gamma1 * (op.grad_x_l2(x_n, s_n, phi, adj_phi, x_0)), path_prox, ch)
@@ -110,6 +118,12 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLam
             x_n = step1ofADMMforPoisson (d_n, z_n, x_0, phi, adj_phi, poisson_alpha)
             z_n = op.denoise(x_n + d_n, path_prox, ch)
             d_n = d_n + x_n - z_n
+        elif(method == 'comparisonC-3'):
+            # DnCNN RED (Poisson noise)
+            # https://arxiv.org/pdf/1611.02862.pdf のu_nをd_nに、v_nをz_nに置き換えた
+            x_n = step1ofADMMforPoisson (d_n, z_n, x_0, phi, adj_phi, poisson_alpha)
+            z_n = step2ofADMM_REDforPoisson (x_n, d_n, z_n, path_prox, ch)
+            d_n = d_n + x_n - z_n
         else:
             print("Unknown method:", method)
             return x_0, c
@@ -119,12 +133,14 @@ def test_iter(x_0, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLam
         psnr_data[i] = psnr(x_n, x_true)
         if(i % 10 == 0):
             print('Method:' , method, '  iter: ', i, ' / ', max_iter, ' PSNR: ', psnr_data[i])
+    end_time = time.process_time()
+    average_time = (end_time - start_time)/max_iter
 
-    return x_n, s_n+0.5, c, psnr_data
+    return x_n, s_n+0.5, c, psnr_data, average_time
 
 def step1ofADMMforPoisson (u, v, y, phi, adj_phi, poisson_alpha):
     # ADMMのステップ1を計算する関数 ポアソンノイズ用
-    MAX_ITER = 100
+    MAX_ITER = 25
     gamma = 10
     lambydaInStep1 = 0.025
     x_n = np.ones(u.shape)
@@ -132,6 +148,16 @@ def step1ofADMMforPoisson (u, v, y, phi, adj_phi, poisson_alpha):
         grad = -adj_phi(y / (poisson_alpha*phi(x_n)))/poisson_alpha + adj_phi(np.ones(x_n.shape))/poisson_alpha + lambydaInStep1 * (x_n - v + u)
         x_n = x_n - gamma * grad
         #val = -y.flatten() @ np.log(phi(x_n).flatten()*poisson_alpha) + np.ones(x_n.size) @ phi(x_n).flatten()*poisson_alpha + lambydaInStep1 / 2 * np.linalg.norm(x_n - v + u)**2
-        #print(val)
-    #print("-------")
     return x_n
+
+def step2ofADMM_REDforPoisson (x_n, u_prev, v_prev, path_prox, ch):
+    # ADMMのステップ2(RED)を計算する関数 ポアソンノイズ用
+    MAX_ITER = 20
+    beta = 0.025 # step1ofADMMforPoisson のlambdaInStep1と同じ
+    lambydaInStep2 = 0.025
+    z_str = x_n + u_prev
+    z_n = v_prev
+    for i in range(0, MAX_ITER):
+        z_n = op.denoise(z_n, path_prox, ch)
+        z_n = 1 / (beta + lambydaInStep2) * (lambydaInStep2 * z_n + beta * z_str)
+    return z_n
