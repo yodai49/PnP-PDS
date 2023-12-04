@@ -45,8 +45,9 @@ def get_random_sampling_operator(x, r):
     y = np.zeros(x.shape)
     if(np.ndim(x) == 2):
         #grayscale
-        X = X.flatten()
+        X = x.flatten()
         X[Q] = 0
+        y = X.reshape(w, h)
     elif(np.ndim(x)==3):
         # color
         for i in range(0,3):

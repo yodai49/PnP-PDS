@@ -58,7 +58,7 @@ def grid_search(grid_num = 6):
     plt.show()
 
 
-def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_noise = True, poisson_alpha = 1, gamma1 = 1.99, gamma2 = 1.99, alpha_n = 0.9, alpha_s = 0.9, myLambda=1, result_output = True, method = 'ours-A', architecture = '', r=0.5, deg_op = 'blur', ch = 3):
+def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_noise = True, poisson_alpha = 1, gamma1 = 1.99, gamma2 = 1.99, alpha_n = 0.9, alpha_s = 0.9, myLambda=1, m1=25, m2=1, result_output = True, method = 'ours-A', architecture = '', r=0.5, deg_op = 'blur', ch = 3):
     # 戻り値：psnr（すべての画像の平均値）
 
     path_test = config['path_test']
@@ -70,6 +70,7 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_
     path_prox = config['root_folder'] + 'nn/' + architecture + '.pth'
 
     psnr = np.zeros((len(path_images))) # 各画像のイタレーション終了時のPSNRを格納した配列
+    cpu_time = np.zeros((len(path_images))) # 各画像のCPU時間を格納した配列
     cnt = 0
 
     for path_img in path_images:
@@ -90,25 +91,27 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_
         img_obsrv = add_salt_and_pepper_noise(img_obsrv, sp_nl)
         
         x_0 = np.copy(img_obsrv)
+        if(poisson_noise == True):
+            x_0 = x_0 / poisson_alpha
         
         #epsilon = np.linalg.norm(gaussian_noise) / np.sqrt(img_true.size) # oracle
         #print(epsilon)
         
-        img_sol, s_sol, temp_c, temp_psnr, average_time = test_iter(x_0, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, gaussian_nl, sp_nl, poisson_alpha, path_prox, max_iter, method, ch)
-        print(average_time)
+        img_sol, s_sol, temp_c, temp_psnr, average_time = test_iter(x_0, img_obsrv, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, m1, m2, gaussian_nl, sp_nl, poisson_alpha, path_prox, max_iter, method, ch)
         psnr[cnt] = temp_psnr[-1]
-        print('PSNR: ', psnr[cnt])
+        cpu_time[cnt] = average_time
+#        print('PSNR: ', psnr[cnt])
 
         if(poisson_noise):
             # 明るさを元と揃える
             img_obsrv = img_obsrv / poisson_alpha
         pictures = [img_true, img_obsrv, img_sol]
-        timestamp = str(datetime.datetime.now().strftime("%Y%m%d-%H%M"))
+        timestamp = str(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
         path_pictures = [path_result + path_img[path_img.rfind('\\'):] + '_TRUE_' + method + '(' + deg_op + ')_gaussiannl' + str(gaussian_nl) + '(' + timestamp + ')',  path_result +  path_img[path_img.rfind('\\'):] + '_OBSRV_' + method + '(' + deg_op + ')_gaussian-nl' + str(gaussian_nl) + '(' + timestamp + ')', path_result + path_img[path_img.rfind('\\'):]+ '_RESULT_'  + method + '(' + deg_op + ')_gaussian-nl' + str(gaussian_nl) + '(' + timestamp + ')']
         save_imgs(pictures = pictures, path_pictures = path_pictures, format = '.png')
 
-        np.save(path_result + 'PSNR_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:]  + '(' + timestamp + ')', temp_psnr)
-        np.save(path_result + 'c_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-8:]  + '(' + timestamp + ')', temp_c)
+        np.save(path_result + 'PSNR_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-6:]  + '(' + timestamp + ')', temp_psnr)
+        np.save(path_result + 'c_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_' + path_img[-6:]  + '(' + timestamp + ')', temp_c)
 
         cnt=cnt+1
 
@@ -121,15 +124,68 @@ def eval_restoration(max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0.01, poisson_
             plt.ylabel('PSNR')
             plt.show()
 
-    params = {'mean_PSNR':np.mean(psnr), 'PSNR':psnr, 'gamma1': gamma1, 'gamma2': gamma2, 'alpha_n': alpha_n, 'gaussian_nl':gaussian_nl, 'sp_nl':sp_nl, 'alpha_n':alpha_n, 'alpha_s':alpha_s, 'max_iter':max_iter, 'myLambda': myLambda, 'r':r, deg_op:'deg_op'}
-    np.save(path_result + 'RESULT_AND_PARAMS_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_'  + path_img[-8:] + '(' + timestamp + ')', params)
+    params = {'Average_PSNR':np.mean(psnr), 'PSNR':psnr, 'Average_time':np.average(cpu_time) , 'Cpu_time': cpu_time, 'architecture':architecture,'gamma1': gamma1, 'gamma2': gamma2, 'alpha_n': alpha_n, 'gaussian_nl':gaussian_nl, 'sp_nl':sp_nl, 'poisson-noise':poisson_noise, 'poisson_alpha':poisson_alpha, 'alpha_n':alpha_n, 'alpha_s':alpha_s, 'max_iter':max_iter, 'myLambda': myLambda, 'r':r,  'deg_op': deg_op, 'method':method, 'ch':ch, 'm1':m1, 'm2':m2}
+    print(params)
+    np.save(path_result + 'RESULT_AND_PARAMS_' + method + '(' + deg_op + ')_nl' + str(gaussian_nl) + '_'  + path_img[-6:] + '(' + timestamp + ')', params)
 
     return np.mean(psnr)
 
 if (__name__ == '__main__'):
-#    grid_search(20)
+#    grid_search(20)    
+#    For Poisson noise + blur operator alpha=300
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.00055, gamma2 = 1 / 0.00056, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'ours-C', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.01, gamma2 = 99, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-1', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.025, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-2', ch = 1)
+
+    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.02, gamma2 = 1000, r=1, alpha_n = 0.9, alpha_s = 0.95, m1 = 25, m2 = 10, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-3', ch = 1)
+
+#    For Poisson noise + random_sampling alpha=300
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 300, max_iter = 6000, gamma1 = 0.00035, gamma2 = 1 / 0.00035, r=0.5, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'ours-C', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 300, max_iter = 6000, gamma1 = 0.005, gamma2 = 99, r=0.5, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-1', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 300, max_iter = 6000, gamma1 = 0.0005, gamma2 = 1999, r=0.5, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-2', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 300, max_iter = 6000, gamma1 = 0.065, gamma2 = 9, r=0.5, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-3', ch = 1)
+
+    # For Poisson noise + random_sampling  alpha=100
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.0004, gamma2 = 1 / 0.0004, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'ours-C', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.0005, gamma2 = 1 / 0.0005, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'ours-C', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.0006, gamma2 = 1 / 0.0006, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'ours-C', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.0007, gamma2 = 1 / 0.0007, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'ours-C', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.005, gamma2 = 99, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-1', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.006, gamma2 = 99, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-1', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.007, gamma2 = 99, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-1', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.008, gamma2 = 99, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-1', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.001, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-2', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.002, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-2', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.003, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-2', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.004, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-2', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.005, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-2', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.2, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-3', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.3, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-3', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.5, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-3', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.6, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-3', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.7, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-3', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.8, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-3', ch = 1)
+
+    # For Poisson noise + random_sampling  alpha=100
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 6000, gamma1 = 0.0001, gamma2 = 1 / 0.0001, r=0.5, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'ours-C', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 12000, gamma1 = 0.001, gamma2 = 99, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-1', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 12000, gamma1 = 0.002, gamma2 = 99, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-1', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 12000, gamma1 = 0.003, gamma2 = 99, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-1', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 12000, gamma1 = 0.004, gamma2 = 99, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-1', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 12000, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.001, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-2', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 12000, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.002, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-2', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 12000, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.003, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-2', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 12000, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.004, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-2', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 12000, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.005, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-2', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 12000, gamma1 = 0.3, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-3', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 12000, gamma1 = 0.5, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-3', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 12000, gamma1 = 1, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-3', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 12000, gamma1 = 2, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-3', ch = 1)
+#    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 12000, gamma1 = 4, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-3', ch = 1)
+
+    print("************** Runned **************")
+
 #     psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.0, poisson_noise=False, poisson_alpha = 300, max_iter = 500, gamma1 = 1, gamma2 = 0.9, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=True, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'comparisonA-6', ch = 3)
-     psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.0, poisson_noise=False, poisson_alpha = 300, max_iter = 500, gamma1 = 1, gamma2 = 0.9, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=True, architecture='usrnet', deg_op = 'blur', method = 'comparisonA-7', ch = 3)
 #    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 300, max_iter = 800, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=True, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-3', ch = 1)
 #    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 300, max_iter = 800, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=True, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'comparisonC-2', ch = 1)
 #    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 300, max_iter = 800, gamma1 = 0.0005, gamma2 = 1999, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=True, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'blur', method = 'ours-C', ch = 1)
@@ -140,6 +196,8 @@ if (__name__ == '__main__'):
 #     psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.1, poisson_noise=False, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.1, gamma2 = 0.9, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonB-1', ch = 3)
 #     psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.1, poisson_noise=False, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.1, gamma2 = 0.9, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonB-2', ch = 3)
 #     psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.1, poisson_noise=False, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.1, gamma2 = 0.9, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonB-3', ch = 3)
+#     psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.0, poisson_noise=False, poisson_alpha = 300, max_iter = 300, gamma1 = 1, gamma2 = 0.09, r=1, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonA-4', ch = 3)
+
 #    psnr = eval_restoration(gaussian_nl=0.0, sp_nl=0, poisson_noise=True, poisson_alpha = 120, max_iter = 300, gamma1 = 0.1, gamma2 = 9, r=1, alpha_n = 0.9, alpha_s = 0, myLambda=0.0005, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'Id', method = 'ours-C')
 #    psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.0, poisson_noise=False, poisson_alpha=0.01, max_iter = 400, gamma1 = 0.09, gamma2 = 0.1, r=1, alpha_n = 0.9, alpha_s = 1, myLambda=1, result_output=True, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-A')
 #    python test.py --max_iter=2000 --gamma1=0.49 --gamma2=0.99 --gaussian_nl=0.01 --sp_nl=0.0 --architecture=preDnCNN_nobn_nch_3_nlev_0.01 --alpha_n=0.95 --method=comparisonC-1 --r=0.7 --deg_op=random_sampling
