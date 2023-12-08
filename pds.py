@@ -10,7 +10,7 @@ def psnr(img_1, img_2):
     mse = np.mean((img_1_scaled.astype(float) - img_2.astype(float)) ** 2)
     return 10 * np.log10((data_range ** 2) / mse)
 
-def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, m1, m2, gaussian_nl, sp_nl, poisson_alpha, path_prox, max_iter, method="ours-A", ch = 3):
+def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, m1, m2, gammaInADMMStep1, gaussian_nl, sp_nl, poisson_alpha, path_prox, max_iter, method="ours-A", ch = 3):
     # x_0　初期値
     # x_obsrv 観測画像
     # x_true 真の画像
@@ -120,14 +120,14 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
             y_n = y_n - gamma2 * op.prox_GKL(y_n / gamma2, myLambda / gamma2, poisson_alpha, x_obsrv)
         elif(method == 'comparisonC-2'):
             # DnCNN-PnP-ADMM (Poisson noise)
-            x_n = step1ofADMMforPoisson (d_n, z_n, x_obsrv, phi, adj_phi, poisson_alpha, myLambda, m1)
+            x_n = step1ofADMMforPoisson (d_n, z_n, x_obsrv, phi, adj_phi, poisson_alpha, myLambda, m1, gammaInADMMStep1)
             z_n = op.denoise(x_n + d_n, path_prox, ch)
             d_n = d_n + x_n - z_n
         elif(method == 'comparisonC-3'):
             # DnCNN RED (Poisson noise)
             # https://arxiv.org/pdf/1611.02862.pdf のu_nをd_nに、v_nをz_nに置き換えた
             # Step2で使うlambdaはgamma1を用いる
-            x_n = step1ofADMMforPoisson (d_n, z_n, x_obsrv, phi, adj_phi, poisson_alpha, myLambda, m1)
+            x_n = step1ofADMMforPoisson (d_n, z_n, x_obsrv, phi, adj_phi, poisson_alpha, myLambda, m1, gammaInADMMStep1)
             z_n = step2ofADMM_REDforPoisson (x_n, d_n, z_n, myLambda,  gamma1, path_prox, ch, m2)
             d_n = d_n + x_n - z_n
         else:
@@ -137,7 +137,7 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
         c[i] = np.linalg.norm((x_n - x_prev).flatten()) / np.linalg.norm(x_prev.flatten())
 #        c[i] = np.linalg.norm(phi(x_n) - x_0)
         psnr_data[i] = psnr(x_n, x_true)
-        if(i % 10 == 0 and True):
+        if(i % 10 == 0 and False):
             print('Method:' , method, '  iter: ', i, ' / ', max_iter, ' PSNR: ', psnr_data[i])
     torch.cuda.synchronize(); 
     end_time = time.process_time()
@@ -145,11 +145,11 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
 
     return x_n, s_n+0.5, c, psnr_data, average_time
 
-def step1ofADMMforPoisson (u, v, y, phi, adj_phi, poisson_alpha, myLambda, m):
+def step1ofADMMforPoisson (u, v, y, phi, adj_phi, poisson_alpha, myLambda, m, gammaInADMMStep1):
     # ADMMのステップ1を計算する関数 ポアソンノイズ用
     # lambdaはmyLambdaで指定
     MAX_ITER = m
-    gamma = 10
+    gamma = gammaInADMMStep1
     lambydaInStep1 = myLambda
     x_n = np.ones(u.shape)
     for i in range(0, MAX_ITER):

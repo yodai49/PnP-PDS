@@ -22,10 +22,10 @@ def plot_graph():
     plt.rcParams["legend.borderaxespad"] = 0. # 凡例の端とグラフの端を合わせる
     
     every = 100
-    y_1 = np.load('./result-PDS/PSNR_ours-C(random_sampling)_nl0.0_01.png(20231204-123651).npy')
-    y_2 = np.load('./result-PDS/PSNR_ours-C(random_sampling)_nl0.0_01.png(20231204-123651).npy')
-    y_3 = np.load('./result-PDS/PSNR_ours-C(random_sampling)_nl0.0_01.png(20231204-123651).npy')
-    y_4 = np.load('./result-PDS/PSNR_ours-C(random_sampling)_nl0.0_01.png(20231204-123651).npy')
+    y_1 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-021911).npy')
+    y_2 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-021911).npy')
+    y_3 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-021911).npy')
+    y_4 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-021911).npy')
     x = np.linspace(0, y_1.size, (int)(y_1.size / every))
     y_1 = y_1[::every]
     y_2 = y_2[::every]
@@ -55,7 +55,7 @@ def plot_graph():
 #    fig.savefig('./ICASSP-result/test.eps', bbox_inches="tight", pad_inches=0.05)
 
     #print
-#    params = np.load('./result-PDS/RESULT_AND_PARAMS_comparisonC-3(blur)_nl0.0_364.jpeg(20231130-1826).npy', allow_pickle=True)
+#    params = np.load('./result-PDS/RESULT_AND_PARAMS_comparisonC-2(blur)_nl0.0_ll.png(20231204-193413).npy', allow_pickle=True)
 #    print(params)
 
 
