@@ -156,7 +156,8 @@ if (__name__ == '__main__'):
  #   psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 3000, gamma1 = 0.00034, gamma2 = 2940, r=0.5, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'ours-C', ch = 1)
  #   psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 3000, gamma1 = 0.004, gamma2 = 99, r=0.5, alpha_n = 0.9, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-1', ch = 1)
  #   psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 3000, gamma1 = 0.0005, gamma2 = 1999, r=0.5, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.3, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-2', ch = 1, m1=100, gammaInADMMStep1=1)
-    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 3000, gamma1 = 0.3, gamma2 = 1999, r=0.5, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-3', ch = 1, m1 = 100, m2=50)
+    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 3000, gamma1 = 0.85, gamma2 = 1999, r=0.5, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.5, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-3', ch = 1, m1 = 10, m2=10, gammaInADMMStep1=1)
+
 
     print("************** Runned **************")
 

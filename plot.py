@@ -21,11 +21,11 @@ def plot_graph():
     plt.rcParams["legend.markerscale"] = 1 # 点がある場合のmarker scale
     plt.rcParams["legend.borderaxespad"] = 0. # 凡例の端とグラフの端を合わせる
     
-    every = 100
-    y_1 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-021911).npy')
-    y_2 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-021911).npy')
-    y_3 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-021911).npy')
-    y_4 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-021911).npy')
+    every = 1
+    y_1 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231209-002821).npy')
+    y_2 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-181314).npy')
+    y_3 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-181314).npy')
+    y_4 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-181314).npy')
     x = np.linspace(0, y_1.size, (int)(y_1.size / every))
     y_1 = y_1[::every]
     y_2 = y_2[::every]
