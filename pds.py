@@ -128,7 +128,7 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
             # https://arxiv.org/pdf/1611.02862.pdf のu_nをd_nに、v_nをz_nに置き換えた
             # Step2で使うlambdaはgamma1を用いる
             x_n = step1ofADMMforPoisson (d_n, z_n, x_obsrv, phi, adj_phi, poisson_alpha, myLambda, m1, gammaInADMMStep1)
-            z_n = step2ofADMM_REDforPoisson (x_n, d_n, z_n, myLambda,  gamma1, path_prox, ch, m2)
+            z_n = step2ofADMM_REDforPoisson (x_n, d_n, z_n, myLambda, gamma1, path_prox, ch, m2)
             d_n = d_n + x_n - z_n
         else:
             print("Unknown method:", method)

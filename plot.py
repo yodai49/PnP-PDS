@@ -22,10 +22,10 @@ def plot_graph():
     plt.rcParams["legend.borderaxespad"] = 0. # 凡例の端とグラフの端を合わせる
     
     every = 100
-    y_1 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-021911).npy')
-    y_2 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-021911).npy')
-    y_3 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-021911).npy')
-    y_4 = np.load('./result-PDS/PSNR_comparisonC-3(random_sampling)_nl0.0_01.png(20231208-021911).npy')
+    y_1 = np.load('./result-PDS/c_ours-C(random_sampling)_nl0.0_01.png(20231208-004412).npy')
+    y_2 = np.load('./result-PDS/c_comparisonC-1(random_sampling)_nl0.0_01.png(20231208-012902).npy')
+    y_3 = np.load('./result-PDS/c_comparisonC-2(random_sampling)_nl0.0_01.png(20231208-015247).npy')
+    y_4 = np.load('./result-PDS/c_comparisonC-3(random_sampling)_nl0.0_01.png(20231209-004312).npy')
     x = np.linspace(0, y_1.size, (int)(y_1.size / every))
     y_1 = y_1[::every]
     y_2 = y_2[::every]
@@ -41,9 +41,9 @@ def plot_graph():
     fig_1.plot(x, y_4, marker='.', markersize=7, markevery = 1,  markeredgewidth=1., markeredgecolor='k', color="m", label="RED with DnCNN")
 
     fig_1.set_xlabel(r"iterations")
-    fig_1.set_ylabel(r"PSNR")
-#    plt.yscale('log')
-#    plt.ylim(15, 27)
+    fig_1.set_ylabel(r"$c_n$")
+    plt.yscale('log')
+#    plt.ylim(23, 28.5)
     plt.grid(color="gainsboro")
 
 #    fig_1.legend(ncol=1, bbox_to_anchor=(0., 1.025, 1., 0.102), loc="lower right")
