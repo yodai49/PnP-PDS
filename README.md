@@ -1,4 +1,4 @@
-# 使い方
+# 始めに
 - requirements.txtを使い、pipで必要なものをすべて入れてください
 - ルートフォルダ内にconfigフォルダを作り、その中に"setup.json"を作成してください。
 - setup.jsonの中身は以下の通りです。環境に合わせてパスは書き換えてください。
@@ -10,13 +10,15 @@
     "pattern_red": "*.JPEG", 
     "root_folder": "/Users/hogehoge/PnP-PDS/"
 }
-   - path_train デノイザーをトレーニングするときに使います。画像復元するだけなら適当で良いです。
-   - path_test 復元したい画像が入っているフォルダです
-   - path_restult 復元結果が格納されるフォルダです
-   - pattern_red JPEGなら.JPEGと書いてください。その他も同様です。大文字小文字が区別されます。
-   - root_folder フォルダを置いている場所を指定してください
+  - path_train デノイザーをトレーニングするときに使います。画像復元するだけなら適当で良いです。
+  - path_test 復元したい画像が入っているフォルダです
+  - path_restult 復元結果が格納されるフォルダです
+  - pattern_red JPEGなら.JPEGと書いてください。その他も同様です。大文字小文字が区別されます。
+  - root_folder フォルダを置いている場所を指定してください
  
-- とりあえず、test.pyからeval_restorationを呼び出してみてください。
+とりあえず、test.pyからeval_restorationを呼び出してみてください。
+
+# eval_restorationのパラメータ
  - gaussian_nl ガウシアンノイズの標準偏差です。加える場合は、0.005〜0.02とかがちょうどいいです
  - sp_nl スパースノイズが重畳する割合です。0〜1の範囲です。
  - poisson_alpha　ポアソンノイズのスケーリング係数です。100ぐらいがちょうどいいです
