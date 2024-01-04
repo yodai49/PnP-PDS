@@ -10,11 +10,11 @@
     "pattern_red": "*.JPEG", 
     "root_folder": "/Users/hogehoge/PnP-PDS/"
 }
-  - path_train デノイザーをトレーニングするときに使います。画像復元するだけなら適当で良いです。
-  - path_test 復元したい画像が入っているフォルダです
-  - path_restult 復元結果が格納されるフォルダです
-  - pattern_red JPEGなら.JPEGと書いてください。その他も同様です。大文字小文字が区別されます。
-  - root_folder フォルダを置いている場所を指定してください
+   - path_train デノイザーをトレーニングするときに使います。画像復元するだけなら適当で良いです。
+   - path_test 復元したい画像が入っているフォルダです
+   - path_restult 復元結果が格納されるフォルダです
+   - pattern_red JPEGなら.JPEGと書いてください。その他も同様です。大文字小文字が区別されます。
+   - root_folder フォルダを置いている場所を指定してください
  
 - とりあえず、test.pyからeval_restorationを呼び出してみてください。
  - gaussian_nl ガウシアンノイズの標準偏差です。加える場合は、0.005〜0.02とかがちょうどいいです
