@@ -1,0 +1,4 @@
+.env/
+config/
+result/
+__pycache__/
