@@ -4,6 +4,8 @@ import bm3d
 import time
 import torch
 
+from models.denoiser import Denoiser
+
 def psnr(img_1, img_2):
     img_1_scaled = img_1
     data_range=1
@@ -36,6 +38,8 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
     d_n = np.zeros(x_0.shape)
     c = np.zeros(max_iter)
     psnr_data = np.zeros(max_iter)
+    denoiser_J = Denoiser(file_name=path_prox, ch = ch)
+
     start_time = time.process_time()
     for i in range(max_iter):
         x_prev = x_n
@@ -43,7 +47,7 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
 
         if(method == 'ours-A'):
             # Primal-dual spilitting algorithm with denoiser (Gaussian noise)
-            x_n = op.denoise(x_n - gamma1 * adj_phi(y_n), path_prox, ch)
+            x_n = denoiser_J.denoise(x_n - gamma1 * adj_phi(y_n))
             y_n = y_n + gamma2 * phi(2 * x_n - x_prev)
             y_n = y_n - gamma2 * op.proj_l2_ball(y_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_obsrv)
         elif(method == 'ours-B'):
@@ -75,23 +79,28 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
             x_n = bm3d.bm3d_rgb(x_n, sigma_psd=1)
             x_n = np.moveaxis(x_n, -1, 0)       
         elif(method == 'comparisonA-4'):
-            # Primal-dual spilitting algorithm with HTV
+            # Primal-dual spilitting algorithm with TV
             x_n = x_n - gamma1 * (op.D_T(y1_n) + adj_phi(y2_n))
             y1_n = y1_n + gamma2 * op.D(2 * x_n - x_prev)
             y1_n = y1_n - gamma2 * op.prox_l12(y1_n / gamma2, 1 / gamma2)
             y2_n = y2_n + gamma2 * (phi(2 * x_n - x_prev))
             y2_n = y2_n - gamma2 * op.proj_l2_ball(y2_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_obsrv)
         elif(method == 'comparisonA-5'):
-            # Primal-dual splitting with HTV (additive formulation):
+            # Primal-dual splitting with TV (additive formulation):
             x_n = x_n - gamma1 * (adj_phi(phi(x_n)-x_obsrv) + op.D_T(y1_n))
             y1_n = y1_n + gamma2 * op.D(2 * x_n - x_prev)
-            y1_n = y1_n - gamma2 * op.prox_l12(y1_n / gamma2, gamma2)   
+            y1_n = y1_n - gamma2 * op.prox_l12(y1_n / gamma2, 1 / gamma2)   
         elif(method == 'comparisonA-6'):
             # DnCNN RED 
             # https://arxiv.org/pdf/1611.02862.pdf のsigmaをgamma1にlambdaをmyLambdaに置き換えた
             x_n = op.denoise(x_n, path_prox, ch)
             mu = 2 / (1/gamma1**2 + myLambda)
             x_n = x_prev - mu * ((1 / gamma1**2) * adj_phi(phi(x_prev) - x_obsrv) + myLambda * (x_prev - x_n))
+        elif(method == 'comparisonA-7'):
+            model = op.denoise_by_Khai_DnCNN(in_nc=n_channels, out_nc=n_channels, nc=64, nb=nb, act_mode='R')
+            # model = net(in_nc=n_channels, out_nc=n_channels, nc=64, nb=nb, act_mode='BR')  # use this if BN is not merged by utils_bnorm.merge_bn(model)
+            model.load_state_dict(torch.load(model_path), strict=True)
+            model.eval()
         elif(method == 'comparisonB-1'):
             # BM3D-PnP-PDS (Gaussian noise + sparse noise)
             x_n = x_n - gamma1 * adj_phi(y_n)

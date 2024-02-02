@@ -3,6 +3,7 @@ import scipy.io
 import numpy as np
 
 from models.denoiser import Denoiser
+from models.network_dncnn import DnCNN as net
 
 def get_blur_operator(x, h):
     # return x*h where * is a convolution
@@ -82,6 +83,9 @@ def denoise(x, path_prox, ch):
     denoiser = Denoiser(file_name=path_prox, ch = ch)
     return denoiser.denoise(x)
 
+def denoise_by_Khai_DnCNN(x, path_prox, ch):
+    return net(x)
+
 def grad_x_l2(x, s, phi, adj_phi, x_0):
     return 2 * adj_phi(phi(x) + s - x_0)
 
@@ -90,7 +94,6 @@ def grad_s_l2(x, s, phi, x_0):
     
 def proj_l1_ball(x, alpha_s, sp_nl, r=1):
     # Projection on l1 ball
-#    eta = alpha_s * x.size * sp_nl * 0.5
     eta = alpha_s * x.size * sp_nl * r * 0.5
     y = x.reshape((-1))
     y = np.fmax(np.abs(y)-np.fmax(np.max(((np.cumsum(np.sort(np.abs(y))[::-1])-eta)/(np.arange(1, len(y) + 1))).conj().T), 0), 0)*np.sign(y)
@@ -100,7 +103,6 @@ def proj_l1_ball(x, alpha_s, sp_nl, r=1):
 def proj_l2_ball(x, alpha_n, gaussian_nl, sp_nl, x_0, r=1):
     # projection on l2 ball
     epsilon = np.sqrt(x.size * (1 - sp_nl)) * r * alpha_n * gaussian_nl
-#    epsilon = np.sqrt(x.size) * alpha_n * gaussian_nl
     val = np.copy(x)
     if(np.linalg.norm(x - x_0) > epsilon):
         val = x_0 + epsilon * (x - x_0) / np.linalg.norm(x - x_0)
@@ -108,7 +110,7 @@ def proj_l2_ball(x, alpha_n, gaussian_nl, sp_nl, x_0, r=1):
 
 def prox_l12(x, gamma):
     val = gamma/np.sqrt(np.sum(x*x, 0))
-    return np.max(1 - val, 0) * x
+    return np.fmax(1 - val, 0) * x
 
 def prox_GKL(x, gamma, alpha, x_0):
     return 0.5 * (x - gamma * alpha + np.sqrt(np.square(x - gamma * alpha) + 4 * gamma * x_0))
