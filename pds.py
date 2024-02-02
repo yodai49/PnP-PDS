@@ -4,7 +4,8 @@ import bm3d
 import time
 import torch
 
-from models.denoiser import Denoiser
+from models.denoiser import Denoiser as Denoiser_J
+from models.network_dncnn import DnCNN as Denoiser_KAIR
 
 def psnr(img_1, img_2):
     img_1_scaled = img_1
@@ -38,7 +39,11 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
     d_n = np.zeros(x_0.shape)
     c = np.zeros(max_iter)
     psnr_data = np.zeros(max_iter)
-    denoiser_J = Denoiser(file_name=path_prox, ch = ch)
+
+    if(method == 'ours-A'):
+        denoiser_J = Denoiser_J(file_name=path_prox, ch = ch)
+    if (method == 'comparisonA-7'):
+        denoiser_KAIR = Denoiser_KAIR(in_nc=ch, out_nc=ch, nc=64, nb=20, act_mode='R', model_path = path_prox)
 
     start_time = time.process_time()
     for i in range(max_iter):
@@ -97,10 +102,13 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
             mu = 2 / (1/gamma1**2 + myLambda)
             x_n = x_prev - mu * ((1 / gamma1**2) * adj_phi(phi(x_prev) - x_obsrv) + myLambda * (x_prev - x_n))
         elif(method == 'comparisonA-7'):
-            model = op.denoise_by_Khai_DnCNN(in_nc=n_channels, out_nc=n_channels, nc=64, nb=nb, act_mode='R')
-            # model = net(in_nc=n_channels, out_nc=n_channels, nc=64, nb=nb, act_mode='BR')  # use this if BN is not merged by utils_bnorm.merge_bn(model)
-            model.load_state_dict(torch.load(model_path), strict=True)
-            model.eval()
+            x_n = (x_n - gamma1 * adj_phi(y_n))
+            x_n = torch.from_numpy(np.ascontiguousarray(x_n)).float().unsqueeze(0)
+            print(x_n.shape)
+            x_n = denoiser_KAIR(x_n)
+            x_n = x_n.data.squeeze().float().clamp_(0, 1).cpu().numpy()
+            y_n = y_n + gamma2 * phi(2 * x_n - x_prev)
+            y_n = y_n - gamma2 * op.proj_l2_ball(y_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_obsrv)
         elif(method == 'comparisonB-1'):
             # BM3D-PnP-PDS (Gaussian noise + sparse noise)
             x_n = x_n - gamma1 * adj_phi(y_n)

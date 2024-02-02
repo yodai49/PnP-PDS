@@ -2,6 +2,8 @@
 import torch.nn as nn
 import models.basicblock as B
 
+import torch
+
 
 """
 # --------------------------------------------
@@ -38,7 +40,7 @@ import models.basicblock as B
 # DnCNN
 # --------------------------------------------
 class DnCNN(nn.Module):
-    def __init__(self, in_nc=1, out_nc=1, nc=64, nb=17, act_mode='BR'):
+    def __init__(self, in_nc=1, out_nc=1, nc=64, nb=17, act_mode='BR', model_path = ''):
         """
         # ------------------------------------
         in_nc: channel number of input
@@ -65,6 +67,10 @@ class DnCNN(nn.Module):
         m_tail = B.conv(nc, out_nc, mode='C', bias=bias)
 
         self.model = B.sequential(m_head, *m_body, m_tail)
+
+        self.load_state_dict(torch.load(model_path), strict=True)
+        self.eval()
+
 
     def forward(self, x):
         n = self.model(x)

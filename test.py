@@ -186,9 +186,12 @@ if (__name__ == '__main__'):
 #    check_homogeneity(architecture='DnCNN_nobn_nch_3_nlev_0.01', ch = 3, epsilon=0.5) # homogeneityを測定する
 
 #   Experiment A(Gaussian noise)
-    psnr = eval_restoration(gaussian_nl=0.005, sp_nl=0.0, poisson_noise=False, poisson_alpha = 0, max_iter = 1200, gamma1 = 0.99, gamma2 = 0.99, r=1, alpha_n = 0.95, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-A', ch = 3)
+    
+    psnr = eval_restoration(gaussian_nl=0.005, sp_nl=0.0, poisson_noise=False, poisson_alpha = 0, max_iter = 1200, gamma1 = 0.99, gamma2 = 0.99, r=1, alpha_n = 0.95, alpha_s = 0.95, myLambda=1, result_output=False, architecture='dncnn_color_blind', deg_op = 'blur', method = 'comparisonA-7', ch = 3)
+
+#    psnr = eval_restoration(gaussian_nl=0.005, sp_nl=0.0, poisson_noise=False, poisson_alpha = 0, max_iter = 1200, gamma1 = 0.99, gamma2 = 0.99, r=1, alpha_n = 0.95, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-A', ch = 3)
 #    psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.0, poisson_noise=False, poisson_alpha = 0, max_iter = 1200, gamma1 = 0.99, gamma2 = 0.99, r=1, alpha_n = 0.95, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-A', ch = 3)
-    psnr = eval_restoration(gaussian_nl=0.02, sp_nl=0.0, poisson_noise=False, poisson_alpha = 0, max_iter = 1200, gamma1 = 0.99, gamma2 = 0.99, r=1, alpha_n = 0.95, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-A', ch = 3)
+#    psnr = eval_restoration(gaussian_nl=0.02, sp_nl=0.0, poisson_noise=False, poisson_alpha = 0, max_iter = 1200, gamma1 = 0.99, gamma2 = 0.99, r=1, alpha_n = 0.95, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'blur', method = 'ours-A', ch = 3)
 #    psnr = eval_restoration(gaussian_nl=0.005, sp_nl=0.0, poisson_noise=False, poisson_alpha = 0, max_iter = 6000, gamma1 = 0.99, gamma2 = 0.99, r=0.8, alpha_n = 0.95, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'random_sampling', method = 'ours-A', ch = 3)
 #    psnr = eval_restoration(gaussian_nl=0.01, sp_nl=0.0, poisson_noise=False, poisson_alpha = 0, max_iter = 6000, gamma1 = 0.99, gamma2 = 0.99, r=0.8, alpha_n = 0.95, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'random_sampling', method = 'ours-A', ch = 3)
 #    psnr = eval_restoration(gaussian_nl=0.02, sp_nl=0.0, poisson_noise=False, poisson_alpha = 0, max_iter = 6000, gamma1 = 0.99, gamma2 = 0.99, r=0.8, alpha_n = 0.95, alpha_s = 0.95, myLambda=1, result_output=False, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = 'random_sampling', method = 'ours-A', ch = 3)
