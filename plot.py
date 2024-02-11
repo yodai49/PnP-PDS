@@ -22,10 +22,11 @@ def plot_graph():
     plt.rcParams["legend.borderaxespad"] = 0. # 凡例の端とグラフの端を合わせる
     
     every = 100
-    y_1 = np.load('./result-PDS/PSNR_ours-B(random_sampling)_nl0.005_4.jpeg(20231223-151351).npy')
-    y_2 = np.load('./result-PDS/PSNR_ours-B(random_sampling)_nl0.005_4.jpeg(20231223-151351).npy')
-    y_3 = np.load('./result-PDS/PSNR_ours-B(random_sampling)_nl0.005_4.jpeg(20231223-151138).npy')
-    y_4 = np.load('./result-PDS/PSNR_ours-B(random_sampling)_nl0.005_4.jpeg(20231223-150952).npy')
+    myfile = './result/result-test/PSNR_comparisonA-7(Id)_nl0.005_4.jpeg(20240206-170634).npy'
+    y_1 = np.load(myfile)
+    y_2 = np.load(myfile)
+    y_3 = np.load(myfile)
+    y_4 = np.load(myfile)
     x = np.linspace(0, y_1.size, (int)(y_1.size / every))
     y_1 = y_1[::every]
     y_2 = y_2[::every]

@@ -42,8 +42,12 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
 
     if(method == 'ours-A'):
         denoiser_J = Denoiser_J(file_name=path_prox, ch = ch)
-    if (method == 'comparisonA-7'):
-        denoiser_KAIR = Denoiser_KAIR(in_nc=ch, out_nc=ch, nc=64, nb=20, act_mode='R', model_path = path_prox)
+    if (method == 'comparisonA-7' or method == 'comparisonC-4'):
+        if (ch == 3):
+            nb = 20
+        elif(ch == 1):
+            nb = 17
+        denoiser_KAIR = Denoiser_KAIR(in_nc=ch, out_nc=ch, nc=64, nb=nb, act_mode='R', model_path = path_prox)
 
     start_time = time.process_time()
     for i in range(max_iter):
@@ -102,11 +106,11 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
             mu = 2 / (1/gamma1**2 + myLambda)
             x_n = x_prev - mu * ((1 / gamma1**2) * adj_phi(phi(x_prev) - x_obsrv) + myLambda * (x_prev - x_n))
         elif(method == 'comparisonA-7'):
-            x_n = (x_n - gamma1 * adj_phi(y_n))
-            x_n = torch.from_numpy(np.ascontiguousarray(x_n)).float().unsqueeze(0)
-            print(x_n.shape)
-            x_n = denoiser_KAIR(x_n)
-            x_n = x_n.data.squeeze().float().clamp_(0, 1).cpu().numpy()
+            x_n = x_n - gamma1 * adj_phi(y_n)
+            x_n_tensor = torch.from_numpy(np.ascontiguousarray(x_n)).float().unsqueeze(0)
+#            x_n_tensor = torch.from_numpy(x_n).float().unsqueeze(0)
+            x_n_tensor = denoiser_KAIR(x_n_tensor)
+            x_n = x_n_tensor.data.squeeze().detach().numpy().copy()
             y_n = y_n + gamma2 * phi(2 * x_n - x_prev)
             y_n = y_n - gamma2 * op.proj_l2_ball(y_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_obsrv)
         elif(method == 'comparisonB-1'):
@@ -158,6 +162,16 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
             x_n = step1ofADMMforPoisson (d_n, z_n, x_obsrv, phi, adj_phi, poisson_alpha, myLambda, m1, gammaInADMMStep1)
             z_n = step2ofADMM_REDforPoisson (x_n, d_n, z_n, myLambda,  gamma1, path_prox, ch, m2)
             d_n = d_n + x_n - z_n
+        elif(method == 'comparisonC-4'):
+            # Not firmly-nonexpansive DnCNN (Poisson noise)
+            x_n = x_n - gamma1 * adj_phi(y_n)
+            x_n_tensor = torch.from_numpy(np.ascontiguousarray(x_n)).float().unsqueeze(0).unsqueeze(0)
+#            x_n_tensor = torch.from_numpy(x_n).float().unsqueeze(0)
+            x_n_tensor = denoiser_KAIR(x_n_tensor)
+            x_n = x_n_tensor.data.squeeze().squeeze().detach().numpy().copy()
+
+            y_n = y_n + gamma2 * phi(2 * x_n - x_prev)
+            y_n = y_n - gamma2 * op.prox_GKL(y_n / gamma2, myLambda / gamma2, poisson_alpha, x_obsrv)
         else:
             print("Unknown method:", method)
             return x_0, c
