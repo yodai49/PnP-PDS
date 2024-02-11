@@ -2,7 +2,7 @@ import cv2, datetime, glob, json, os, iteration
 import numpy as np
 import matplotlib.pyplot as plt
 from operators import get_observation_operators
-from utils.utils_image import save_imgs, save_img
+from utils.utils_image import save_imgs
 from utils.utils_noise import add_salt_and_pepper_noise, add_gaussian_noise, apply_poisson_noise
 from utils.utils_psnr import eval_psnr
 
@@ -116,7 +116,11 @@ def main():
     for Gaussian_noise_level in Gaussian_noise_level_list:
         for sparse_noise_level in sparse_noise_level_list:
             for obsevation_operator in observation_operator_list:
-                for method in method_list:      
+                for method in method_list:
+                    # test_all_imagesには実験設定とパラメータに関する２つの引数のみを用意して、オブジェクトでそれを渡すようにする　実験が終了したときに出力するデータファイルにそれを保存する
+                    # 実験ごとに、そのままcsvで読み込めるようなテキストファイルを出力するようにする
+                    # アルゴリズム部分のリファクタリングを進める
+                    # 実験タイプ(A,B,C)と手法番号(1, 2, 3)を指定すれば、デノイザー(DnCNN)やアルゴリズム(PnP-PDS, RED, ADMM etc.)を取得できるような関数を作る（これの内容もテキストに保存する）。ノイズレベルなどは実験タイプごとにリスト化して保存しておく
                     datas = test_all_images(gaussian_nl=Gaussian_noise_level, sp_nl=sparse_noise_level, poisson_noise=False, poisson_alpha = 0, max_iter = 30, gamma1 = 0.99, gamma2 = 0.99, r=1, alpha_n = 0.95, myLambda=1, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = obsevation_operator, method = method, ch = 3)
 
 if (__name__ == '__main__'):
