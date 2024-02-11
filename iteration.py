@@ -1,17 +1,10 @@
 import numpy as np
 import operators as op
-import bm3d
-import time
-import torch
+import bm3d, time, torch
 
 from models.denoiser import Denoiser as Denoiser_J
 from models.network_dncnn import DnCNN as Denoiser_KAIR
-
-def psnr(img_1, img_2):
-    img_1_scaled = img_1
-    data_range=1
-    mse = np.mean((img_1_scaled.astype(float) - img_2.astype(float)) ** 2)
-    return 10 * np.log10((data_range ** 2) / mse)
+from utils.utils_psnr import eval_psnr
 
 def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, m1, m2, gammaInADMMStep1, gaussian_nl, sp_nl, poisson_alpha, path_prox, max_iter, method="ours-A", ch = 3, r=1):
     # x_0　初期値
@@ -28,7 +21,6 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
     # method 手法　ours:提案手法　comparison 比較手法（1はPnP-FBS, 2は制約条件版のTV, 3は和版のTV）
     #              A: 観測＋ガウシアンノイズ　B: 観測＋ガウシアンノイズ＋スパースノイズ　C:観測＋ポアソンノイズ
     #               ours-A  comparisonA-1  などのように指定する
-    # isScaledPSNR Trueにすると最大値と最小値が0～1になるようにスケーリングされた状態でPSNRを出す
 
     x_n = x_0
     y_n = np.zeros(x_0.shape) # 次元が画像と同じ双対変数
@@ -124,8 +116,8 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
             y_n = y_n - gamma2 * op.proj_l2_ball(y_n / gamma2, alpha_n, gaussian_nl, sp_nl, x_obsrv)
         elif(method == 'comparisonB-2'):
             # ADMM algorithm with denoiser  (Gaussian noise + sparse noise)
-            x_n = step1ofADMMforSparseX(s_n, z_n, y_n, phi, adj_phi, path_prox, ch, gamma1, m1, gammaInADMMStep1)
-            s_n = step1ofADMMforSparseS(x_n, z_n, y_n, phi, alpha_s, sp_nl, gamma1, m2, gammaInADMMStep1)
+            x_n = step1ofADMMforSparseX(s_n, z_n, y_n, phi, adj_phi, path_prox, ch, gamma1, m1)
+            s_n = step1ofADMMforSparseS(x_n, z_n, y_n, phi, alpha_s, sp_nl, gamma1, m2)
             z_n = op.proj_l2_ball(phi(x_n) + s_n + y_n, alpha_n, gaussian_nl, sp_nl, x_obsrv)
             y_n = y_n + phi(x_n) + s_n - z_n
         elif(method == 'comparisonB-3'):
@@ -177,10 +169,7 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
             return x_0, c
 
         c[i] = np.linalg.norm((x_n - x_prev).flatten()) / np.linalg.norm(x_prev.flatten())
-#        c[i] = np.linalg.norm(phi(x_n) - x_0)
-        psnr_data[i] = psnr(x_n, x_true)
-        if(i % 10 == 0 and False):
-            print('Method:' , method, '  iter: ', i, ' / ', max_iter, ' PSNR: ', psnr_data[i])
+        psnr_data[i] = eval_psnr(x_n, x_true)
     torch.cuda.synchronize(); 
     end_time = time.process_time()
     average_time = (end_time - start_time)/max_iter
@@ -212,7 +201,7 @@ def step2ofADMM_REDforPoisson (x_n, u_prev, v_prev, beta, myLambda, path_prox, c
         z_n = 1 / (beta + lambydaInStep2) * (lambydaInStep2 * z_n + beta * z_str)
     return z_n
 
-def step1ofADMMforSparseX(s_n, z_n, y_n, phi, adj_phi, path_prox, ch, gamma1, m, gammaInADMMStep1):
+def step1ofADMMforSparseX(s_n, z_n, y_n, phi, adj_phi, path_prox, ch, gamma1, m):
     MAX_ITER = m
     x_n = np.ones(s_n.shape)
     for i in range(0, MAX_ITER):
@@ -220,7 +209,7 @@ def step1ofADMMforSparseX(s_n, z_n, y_n, phi, adj_phi, path_prox, ch, gamma1, m,
         x_n = op.denoise(x_n, path_prox, ch)
     return x_n
 
-def step1ofADMMforSparseS(x_n, z_n, y_n, phi, alpha_s, sp_nl, gamma1, m, gammaInADMMStep1):
+def step1ofADMMforSparseS(x_n, z_n, y_n, phi, alpha_s, sp_nl, gamma1, m):
     MAX_ITER = m
     s_n = np.ones(x_n.shape)
     for i in range(0, MAX_ITER):

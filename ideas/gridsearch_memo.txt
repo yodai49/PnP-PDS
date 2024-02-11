@@ -1,0 +1,26 @@
+
+def search_params(grid_num = 6):
+    param_psnr = np.zeros((grid_num))
+    param_psnr_best = np.zeros((grid_num))
+    param_val_dash = np.zeros((grid_num))
+    for i in range(0, grid_num):
+        gridVal = 110 + i
+        param_psnr[i] = 0
+        param_val_dash[i] = gridVal
+        print('epsilon_dash: ', gridVal)
+        param_psnr[i] = test_all_images(gaussian_nl=0.0, sp_nl=0, poisson_noise=True, poisson_alpha = 120, max_iter = 400, gamma1 = 0.0001, gamma2 = 9999, r=1, alpha_n = 0.9, alpha_s = 0, myLambda=gridVal, result_output=False, architecture='preDnCNN_nobn_nch_3_nlev_0.01', deg_op = 'Id', method = 'ours-C')
+    x = param_val_dash.flatten()
+    y = param_psnr.flatten()
+    #z = param_psnr_best.flatten()
+    #fig = plt.figure(figsize=(8, 8))
+    #ax = fig.add_subplot(111, projection='3d')
+    
+    #ax.scatter3D(x, y, z, label='PSNR')
+    plt.title('Convergence')
+    #plt.gca().set_yscale('log')
+    plt.scatter(x, y)
+    #plt.scatter(x, z)
+    plt.xlabel('epsilon')
+    plt.ylabel('PSNR')
+
+    plt.show()
