@@ -2,7 +2,7 @@ def parse_args_exp (args):
     # Return paresed args related to experimental settings
     # The default value of args should be written here
     # [ gaussian_nl, sp_nl, poisson_noise, poisson_alpha, deg_op, r ]
-    gaussian_nl     = args['gaussian_nl']      if('gaussian_nl' in args)       else 'ours-A'
+    gaussian_nl     = args['gaussian_nl']      if('gaussian_nl' in args)       else 0
     sp_nl           = args['sp_nl']            if ('sp_nl' in args)            else 0
     poisson_noise   = args['poisson_noise']    if ('poisson_noise' in args)    else False
     poisson_alpha   = args['poisson_alpha']    if('poisson_alpha' in args)     else 300
@@ -36,5 +36,5 @@ def parse_args_configs (args):
     ch              = args['ch']               if('ch' in args)                else 3
     add_timestamp   = args['add_timestamp']    if ('add_timestamp' in args)    else True
     result_output   = args['result_output']    if ('result_output' in args)    else False
-    
+
     return ch, add_timestamp, result_output

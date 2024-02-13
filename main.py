@@ -7,14 +7,16 @@ from utils.utils_noise import add_salt_and_pepper_noise, add_gaussian_noise, app
 from utils.utils_eval import eval_psnr, eval_ssim
 from utils.utils_parse_args import *
 from utils.utils_unparse_args import *
+from utils.utils_method_master import get_algorithm_denoiser
+from utils.utils_textfile import *
 
 with open('config/setup.json', 'r') as f:
     config = json.load(f)
 
-def test_all_images (experimental_settings = {}, method = {}, configs = {}):
-    gaussian_nl, sp_nl, poisson_noise, poisson_alpha, deg_op, r  = parse_args_exp (experimental_settings)
-    method, architecture, max_iter, gamma1, gamma2, alpha_n, alpha_s, myLambda, m1, m2, gammaInADMMStep1 = parse_args_method (method)
-    ch, add_timestamp, result_output = parse_args_configs (configs)
+def test_all_images (experimental_settings_arg = {}, method_arg = {}, configs_arg = {}):
+    gaussian_nl, sp_nl, poisson_noise, poisson_alpha, deg_op, r  = parse_args_exp (experimental_settings_arg)
+    method, architecture, max_iter, gamma1, gamma2, alpha_n, alpha_s, myLambda, m1, m2, gammaInADMMStep1 = parse_args_method (method_arg)
+    ch, add_timestamp, result_output = parse_args_configs (configs_arg)
     experimental_settings_all = unparse_args_exp (gaussian_nl, sp_nl, poisson_noise, poisson_alpha, deg_op, r)
     method_all = unparse_args_method (method, architecture, max_iter, gamma1, gamma2, alpha_n, alpha_s, myLambda, m1, m2, gammaInADMMStep1)
     configs_all = unparse_args_configs (ch, add_timestamp, result_output)
@@ -111,7 +113,8 @@ def test_all_images (experimental_settings = {}, method = {}, configs = {}):
     # =====================================
     timestamp_commandline = str(datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
 #    params = {'architecture':architecture, 'gamma1': gamma1, 'gamma2': gamma2, 'alpha_n': alpha_n, 'gaussian_nl':gaussian_nl, 'sp_nl':sp_nl, 'poisson-noise':poisson_noise, 'poisson_alpha':poisson_alpha, 'alpha_n':alpha_n, 'alpha_s':alpha_s, 'max_iter':max_iter, 'myLambda': myLambda, 'r':r,  'deg_op': deg_op, 'method':method, 'ch':ch, 'm1':m1, 'm2':m2, 'gammaInADMMStep1':gammaInADMMStep1}
-    summary = {'Average_PSNR':np.mean(psnr), 'PSNR':psnr, 'Average_SSIM':np.mean(ssim), 'SSIM' : ssim, 'Average_time':np.average(cpu_time) , 'Cpu_time': cpu_time}
+    algorithm, denoiser = get_algorithm_denoiser (method)
+    summary = {'Average_PSNR':np.mean(psnr), 'PSNR':psnr, 'Average_SSIM':np.mean(ssim), 'SSIM' : ssim, 'Average_time':np.average(cpu_time) , 'Cpu_time': cpu_time, 'algorithm' : algorithm, 'denoiser' : denoiser}
     datas = {'experimental_settings' : experimental_settings_all, 'method' : method_all, 'configs' : configs_all, 'results' : results, 'summary' : summary}
     np.save(path_result + '\DATA_' + path_saveimg_base, datas)
 
@@ -120,16 +123,15 @@ def test_all_images (experimental_settings = {}, method = {}, configs = {}):
     return datas
 
 def main():
-    # 実験ごとに、そのままcsvで読み込めるようなテキストファイルを出力するようにする
-    # アルゴリズム部分のリファクタリングを進める
-    # 実験タイプ(A,B,C)と手法番号(1, 2, 3)を指定すれば、デノイザー(DnCNN)やアルゴリズム(PnP-PDS, RED, ADMM etc.)を取得できるような関数を作る（これの内容もテキストに保存する）。ノイズレベルなどは実験タイプごとにリスト化して保存しておく
-    settings = {'gaussian_nl' : 0.005, 'sp_nl' : 0}
-    method = {'method' : 'ours-A', 'max_iter' : 12, 'gamma1' : 0.99, 'gamma2' : 0.99, 'alpha_n' : 0.95}
-    configs = {}
-    datas = test_all_images(experimental_settings = settings, method = method, configs = configs)
+    experiment_data_list = []
+    filepath = config['path_result'] + 'SUMMARY(' + str(datetime.datetime.now().strftime("%Y%m%d %H%M%S %f")) + ').txt'
+    touch_textfile (filepath)
+    experiment_data_list.append ({'settings' : {'gaussian_nl' : 0.005, 'sp_nl' : 0}, 'method' : {'method' : 'ours-A', 'max_iter' : 12, 'gamma1' : 0.99, 'gamma2' : 0.99, 'alpha_n' : 0.95}, 'configs' : {}})
+    experiment_data_list.append ({'settings' : {'gaussian_nl' : 0.05, 'sp_nl' : 0}, 'method' : {'method' : 'ours-A', 'max_iter' : 12, 'gamma1' : 0.99, 'gamma2' : 0.99, 'alpha_n' : 0.95}, 'configs' : {}})
+    for experiment_data in experiment_data_list:
+        data = test_all_images(experiment_data['settings'], experiment_data['method'], experiment_data['configs'])
+        write_textfile (filepath, data)
+    add_footer_textfile (filepath, data)
 
 if (__name__ == '__main__'):
-#    test = np.load('./result/result-test/DATA_ours-A_blur_0.005_(ILSVRC2012_val_00045853.jpeg)_20240213-202146-179802.npy', allow_pickle=True)
-#    test2 = test.item()
-#    print(test2['method'])
     main()
