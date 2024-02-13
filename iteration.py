@@ -4,7 +4,7 @@ import bm3d, time, torch
 
 from models.denoiser import Denoiser as Denoiser_J
 from models.network_dncnn import DnCNN as Denoiser_KAIR
-from utils.utils_psnr import eval_psnr
+from utils.utils_eval import eval_psnr, eval_ssim
 from algorithm.admm import *
 
 def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, m1, m2, gammaInADMMStep1, gaussian_nl, sp_nl, poisson_alpha, path_prox, max_iter, method="ours-A", ch = 3, r=1):
@@ -32,6 +32,7 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
     d_n = np.zeros(x_0.shape)
     c = np.zeros(max_iter)
     psnr_data = np.zeros(max_iter)
+    ssim_data = np.zeros(max_iter)
 
     if(method == 'ours-A'):
         denoiser_J = Denoiser_J(file_name=path_prox, ch = ch)
@@ -170,10 +171,11 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
             return x_0, c
 
         c[i] = np.linalg.norm((x_n - x_prev).flatten()) / np.linalg.norm(x_prev.flatten())
-        psnr_data[i] = eval_psnr(x_n, x_true)
+        psnr_data[i] = eval_psnr(x_true, x_n)
+        ssim_data[i] = eval_ssim(x_true, x_n)
     torch.cuda.synchronize(); 
     end_time = time.process_time()
     average_time = (end_time - start_time)/max_iter
 
-    return x_n, s_n+0.5, c, psnr_data, average_time
+    return x_n, s_n+0.5, c, psnr_data, ssim_data, average_time
 

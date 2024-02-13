@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from operators import get_observation_operators
 from utils.utils_image import save_imgs
 from utils.utils_noise import add_salt_and_pepper_noise, add_gaussian_noise, apply_poisson_noise
-from utils.utils_psnr import eval_psnr
+from utils.utils_eval import eval_psnr, eval_ssim
 
 with open('config/setup.json', 'r') as f:
     config = json.load(f)
@@ -18,6 +18,7 @@ def test_all_images (max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0, poisson_noi
     path_images = sorted(glob.glob(os.path.join(path_test, pattern_red)))
 
     psnr = np.zeros((len(path_images)))
+    ssim = np.zeros((len(path_images)))
     cpu_time = np.zeros((len(path_images)))
     results = {}
 
@@ -49,12 +50,12 @@ def test_all_images (max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0, poisson_noi
             img_obsrv = add_salt_and_pepper_noise(img_obsrv, sp_nl, phi)        
         x_0 = np.copy(img_obsrv)
         if(poisson_noise):
-            x_0 = x_0 / poisson_alpha        
+            x_0 = x_0 / poisson_alpha
         
         # =====================================
         # Run evaluation
         # =====================================
-        img_sol, s_sol, c_evolution, psnr_evolution, average_time = iteration.test_iter(x_0, img_obsrv, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, m1, m2, gammaInADMMStep1, gaussian_nl, sp_nl, poisson_alpha, path_prox, max_iter, method, ch, r)
+        img_sol, s_sol, c_evolution, psnr_evolution, ssim_evolution, average_time = iteration.test_iter(x_0, img_obsrv, img_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, m1, m2, gammaInADMMStep1, gaussian_nl, sp_nl, poisson_alpha, path_prox, max_iter, method, ch, r)
         if(poisson_noise):
             img_obsrv = img_obsrv / poisson_alpha
 
@@ -63,9 +64,11 @@ def test_all_images (max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0, poisson_noi
         # =====================================
         filename = (path_img[path_img.rfind('\\'):])[1:]
         psnr[index] = psnr_evolution[-1]
+        ssim[index] = ssim_evolution[-1]
         cpu_time[index] = average_time
         psnr_obsrv = eval_psnr(img_true, img_obsrv)
-        results[index] = {'filename' : filename, 'c': c_evolution, 'PSNR_evolution' : psnr_evolution, 'GROUND_TRUTH': img_true, 'OBSERVATION' : img_obsrv, 'RESULT': img_sol, 'REMOVED_SPARSE': s_sol, 'PSNR' : psnr_evolution[-1], 'CPU_time' : average_time, 'PSNR_observation' : psnr_obsrv}
+        ssim_obsrv = eval_ssim(img_true, img_obsrv)
+        results[index] = {'filename' : filename, 'c': c_evolution, 'PSNR_evolution' : psnr_evolution, 'SSIM_evolution' : ssim_evolution, 'GROUND_TRUTH': img_true, 'OBSERVATION' : img_obsrv, 'RESULT': img_sol, 'REMOVED_SPARSE': s_sol, 'PSNR' : psnr_evolution[-1], 'SSIM' : ssim_evolution[-1], 'CPU_time' : average_time, 'PSNR_observation' : psnr_obsrv, 'SSIM_observation' : ssim_obsrv}
 
         # =====================================
         # Save images
@@ -91,7 +94,7 @@ def test_all_images (max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0, poisson_noi
             plt.show()
         
         timestamp_commandline = str(datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-        print(timestamp_commandline + '  (' + str(index+1) + '/' + str(len(path_images)) + ') PSNR:' + str(psnr[index].round(3)) +  '   ' + filename)
+        print(timestamp_commandline + '  (' + str(index+1) + '/' + str(len(path_images)) + ') PSNR:' + str(psnr[index].round(3)).ljust(6, '0') + '    SSIM:' + str(ssim[index].round(3)).ljust(6, '0') +  '   ' + filename)
 
 
     # =====================================
@@ -99,11 +102,11 @@ def test_all_images (max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0, poisson_noi
     # =====================================
     timestamp_commandline = str(datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
     params = {'architecture':architecture, 'gamma1': gamma1, 'gamma2': gamma2, 'alpha_n': alpha_n, 'gaussian_nl':gaussian_nl, 'sp_nl':sp_nl, 'poisson-noise':poisson_noise, 'poisson_alpha':poisson_alpha, 'alpha_n':alpha_n, 'alpha_s':alpha_s, 'max_iter':max_iter, 'myLambda': myLambda, 'r':r,  'deg_op': deg_op, 'method':method, 'ch':ch, 'm1':m1, 'm2':m2, 'gammaInADMMStep1':gammaInADMMStep1}
-    summary = {'Average_PSNR':np.mean(psnr), 'PSNR':psnr, 'Average_time':np.average(cpu_time) , 'Cpu_time': cpu_time}
+    summary = {'Average_PSNR':np.mean(psnr), 'PSNR':psnr, 'Average_SSIM':np.mean(ssim), 'SSIM' : ssim, 'Average_time':np.average(cpu_time) , 'Cpu_time': cpu_time}
     datas = {'params' : params, 'results' : results, 'summary' : summary}
     np.save(path_result + '\DATA_' + path_saveimg_base, datas)
 
-    print(timestamp_commandline + '  Average_PSNR:' + str(np.mean(psnr).round(3)) + '    Algorithm:' +  method + '   Observation:' + deg_op + '   Gaussian noise level:' + str(gaussian_nl).ljust(5, '0'))
+    print(timestamp_commandline + '  Average_PSNR:' + str(np.mean(psnr).round(3)) + '  Average_SSIM:' + str(np.mean(ssim).round(3)) + '    Algorithm:' +  method + '   Observation:' + deg_op + '   Gaussian noise level:' + str(gaussian_nl).ljust(5, '0'))
 
     return datas
 
@@ -111,7 +114,7 @@ def main():
     Gaussian_noise_level_list = [0.005]
     sparse_noise_level_list = [0.0]
     observation_operator_list = ['blur']
-    method_list = ['ours-A']
+    method_list = ['ours-A', 'comparisonA-1']
 
     for Gaussian_noise_level in Gaussian_noise_level_list:
         for sparse_noise_level in sparse_noise_level_list:
@@ -121,7 +124,7 @@ def main():
                     # 実験ごとに、そのままcsvで読み込めるようなテキストファイルを出力するようにする
                     # アルゴリズム部分のリファクタリングを進める
                     # 実験タイプ(A,B,C)と手法番号(1, 2, 3)を指定すれば、デノイザー(DnCNN)やアルゴリズム(PnP-PDS, RED, ADMM etc.)を取得できるような関数を作る（これの内容もテキストに保存する）。ノイズレベルなどは実験タイプごとにリスト化して保存しておく
-                    datas = test_all_images(gaussian_nl=Gaussian_noise_level, sp_nl=sparse_noise_level, poisson_noise=False, poisson_alpha = 0, max_iter = 30, gamma1 = 0.99, gamma2 = 0.99, r=1, alpha_n = 0.95, myLambda=1, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = obsevation_operator, method = method, ch = 3)
+                    datas = test_all_images(gaussian_nl=Gaussian_noise_level, sp_nl=sparse_noise_level, poisson_noise=False, poisson_alpha = 0, max_iter = 12, gamma1 = 0.99, gamma2 = 0.99, r=1, alpha_n = 0.95, myLambda=1, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = obsevation_operator, method = method, ch = 3)
 
 if (__name__ == '__main__'):
     main()
