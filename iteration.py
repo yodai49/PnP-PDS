@@ -8,20 +8,18 @@ from utils.utils_eval import eval_psnr, eval_ssim
 from algorithm.admm import *
 
 def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha_n, myLambda, m1, m2, gammaInADMMStep1, gaussian_nl, sp_nl, poisson_alpha, path_prox, max_iter, method="ours-A", ch = 3, r=1):
-    # x_0　初期値
-    # x_obsrv 観測画像
-    # x_true 真の画像
+    # x_0　     初期値
+    # x_obsrv   観測画像
+    # x_true    真の画像
     # phi, adj_phi 観測作用素とその随伴作用素
     # gamma1, gamma2 PDSのステップサイズ
-    # alpha_s スパースノイズのalpha
-    # alpha_n ガウシアンノイズのalpha
-    # myLambda PnP-FBSのステップサイズ
+    # alpha_s   スパースノイズのalpha
+    # alpha_n   ガウシアンノイズのalpha
+    # myLambda  PnP-FBSのステップサイズ
     # gaussian_nl, sp_nl　ガウシアンノイズの分散とスパースノイズの重畳率
     # path_prox ガウシアンデノイザーのパス
     # max_iter アルゴリズムのイタレーション数
-    # method 手法　ours:提案手法　comparison 比較手法（1はPnP-FBS, 2は制約条件版のTV, 3は和版のTV）
-    #              A: 観測＋ガウシアンノイズ　B: 観測＋ガウシアンノイズ＋スパースノイズ　C:観測＋ポアソンノイズ
-    #               ours-A  comparisonA-1  などのように指定する
+    # method 手法
 
     x_n = x_0
     y_n = np.zeros(x_0.shape) # 次元が画像と同じ双対変数
@@ -173,6 +171,8 @@ def test_iter(x_0, x_obsrv, x_true, phi, adj_phi, gamma1, gamma2, alpha_s, alpha
         c[i] = np.linalg.norm((x_n - x_prev).flatten()) / np.linalg.norm(x_prev.flatten())
         psnr_data[i] = eval_psnr(x_true, x_n)
         ssim_data[i] = eval_ssim(x_true, x_n)
+
+
     torch.cuda.synchronize(); 
     end_time = time.process_time()
     average_time = (end_time - start_time)/max_iter

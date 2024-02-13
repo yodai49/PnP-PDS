@@ -5,11 +5,20 @@ from operators import get_observation_operators
 from utils.utils_image import save_imgs
 from utils.utils_noise import add_salt_and_pepper_noise, add_gaussian_noise, apply_poisson_noise
 from utils.utils_eval import eval_psnr, eval_ssim
+from utils.utils_parse_args import *
+from utils.utils_unparse_args import *
 
 with open('config/setup.json', 'r') as f:
     config = json.load(f)
 
-def test_all_images (max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0, poisson_noise = False, poisson_alpha = 300, gamma1 = 0.99, gamma2 = 0.99, alpha_n = 0.95, alpha_s = 0.95, myLambda=1, result_output =False, m1=25, m2=1, method = 'ours-A', architecture = 'DnCNN_nobn_nch_3_nlev_0.01', r=0.8, deg_op = 'blur', ch = 3, gammaInADMMStep1=10, add_timestamp = True):
+def test_all_images (experimental_settings = {}, method = {}, configs = {}):
+    gaussian_nl, sp_nl, poisson_noise, poisson_alpha, deg_op, r  = parse_args_exp (experimental_settings)
+    method, architecture, max_iter, gamma1, gamma2, alpha_n, alpha_s, myLambda, m1, m2, gammaInADMMStep1 = parse_args_method (method)
+    ch, add_timestamp, result_output = parse_args_configs (configs)
+    experimental_settings_all = unparse_args_exp (gaussian_nl, sp_nl, poisson_noise, poisson_alpha, deg_op, r)
+    method_all = unparse_args_method (method, architecture, max_iter, gamma1, gamma2, alpha_n, alpha_s, myLambda, m1, m2, gammaInADMMStep1)
+    configs_all = unparse_args_configs (ch, add_timestamp, result_output)
+
     pattern_red = config['pattern_red']
     path_test = config['path_test']
     path_result = config['path_result']
@@ -101,9 +110,9 @@ def test_all_images (max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0, poisson_noi
     # Save all results
     # =====================================
     timestamp_commandline = str(datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
-    params = {'architecture':architecture, 'gamma1': gamma1, 'gamma2': gamma2, 'alpha_n': alpha_n, 'gaussian_nl':gaussian_nl, 'sp_nl':sp_nl, 'poisson-noise':poisson_noise, 'poisson_alpha':poisson_alpha, 'alpha_n':alpha_n, 'alpha_s':alpha_s, 'max_iter':max_iter, 'myLambda': myLambda, 'r':r,  'deg_op': deg_op, 'method':method, 'ch':ch, 'm1':m1, 'm2':m2, 'gammaInADMMStep1':gammaInADMMStep1}
+#    params = {'architecture':architecture, 'gamma1': gamma1, 'gamma2': gamma2, 'alpha_n': alpha_n, 'gaussian_nl':gaussian_nl, 'sp_nl':sp_nl, 'poisson-noise':poisson_noise, 'poisson_alpha':poisson_alpha, 'alpha_n':alpha_n, 'alpha_s':alpha_s, 'max_iter':max_iter, 'myLambda': myLambda, 'r':r,  'deg_op': deg_op, 'method':method, 'ch':ch, 'm1':m1, 'm2':m2, 'gammaInADMMStep1':gammaInADMMStep1}
     summary = {'Average_PSNR':np.mean(psnr), 'PSNR':psnr, 'Average_SSIM':np.mean(ssim), 'SSIM' : ssim, 'Average_time':np.average(cpu_time) , 'Cpu_time': cpu_time}
-    datas = {'params' : params, 'results' : results, 'summary' : summary}
+    datas = {'experimental_settings' : experimental_settings_all, 'method' : method_all, 'configs' : configs_all, 'results' : results, 'summary' : summary}
     np.save(path_result + '\DATA_' + path_saveimg_base, datas)
 
     print(timestamp_commandline + '  Average_PSNR:' + str(np.mean(psnr).round(3)) + '  Average_SSIM:' + str(np.mean(ssim).round(3)) + '    Algorithm:' +  method + '   Observation:' + deg_op + '   Gaussian noise level:' + str(gaussian_nl).ljust(5, '0'))
@@ -111,20 +120,16 @@ def test_all_images (max_iter = 1000, gaussian_nl = 0.01, sp_nl = 0, poisson_noi
     return datas
 
 def main():
-    Gaussian_noise_level_list = [0.005]
-    sparse_noise_level_list = [0.0]
-    observation_operator_list = ['blur']
-    method_list = ['ours-A', 'comparisonA-1']
-
-    for Gaussian_noise_level in Gaussian_noise_level_list:
-        for sparse_noise_level in sparse_noise_level_list:
-            for obsevation_operator in observation_operator_list:
-                for method in method_list:
-                    # test_all_imagesには実験設定とパラメータに関する２つの引数のみを用意して、オブジェクトでそれを渡すようにする　実験が終了したときに出力するデータファイルにそれを保存する
-                    # 実験ごとに、そのままcsvで読み込めるようなテキストファイルを出力するようにする
-                    # アルゴリズム部分のリファクタリングを進める
-                    # 実験タイプ(A,B,C)と手法番号(1, 2, 3)を指定すれば、デノイザー(DnCNN)やアルゴリズム(PnP-PDS, RED, ADMM etc.)を取得できるような関数を作る（これの内容もテキストに保存する）。ノイズレベルなどは実験タイプごとにリスト化して保存しておく
-                    datas = test_all_images(gaussian_nl=Gaussian_noise_level, sp_nl=sparse_noise_level, poisson_noise=False, poisson_alpha = 0, max_iter = 12, gamma1 = 0.99, gamma2 = 0.99, r=1, alpha_n = 0.95, myLambda=1, architecture='DnCNN_nobn_nch_3_nlev_0.01', deg_op = obsevation_operator, method = method, ch = 3)
+    # 実験ごとに、そのままcsvで読み込めるようなテキストファイルを出力するようにする
+    # アルゴリズム部分のリファクタリングを進める
+    # 実験タイプ(A,B,C)と手法番号(1, 2, 3)を指定すれば、デノイザー(DnCNN)やアルゴリズム(PnP-PDS, RED, ADMM etc.)を取得できるような関数を作る（これの内容もテキストに保存する）。ノイズレベルなどは実験タイプごとにリスト化して保存しておく
+    settings = {'gaussian_nl' : 0.005, 'sp_nl' : 0}
+    method = {'method' : 'ours-A', 'max_iter' : 12, 'gamma1' : 0.99, 'gamma2' : 0.99, 'alpha_n' : 0.95}
+    configs = {}
+    datas = test_all_images(experimental_settings = settings, method = method, configs = configs)
 
 if (__name__ == '__main__'):
+#    test = np.load('./result/result-test/DATA_ours-A_blur_0.005_(ILSVRC2012_val_00045853.jpeg)_20240213-202146-179802.npy', allow_pickle=True)
+#    test2 = test.item()
+#    print(test2['method'])
     main()
