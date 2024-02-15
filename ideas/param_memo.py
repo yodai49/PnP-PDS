@@ -98,5 +98,6 @@
 #    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 300, max_iter = 3000, gamma1 = 0.065, gamma2 = 9, r=0.5, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.03, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-3', ch = 1)
 #    psnr = eval_restoration(gaussian_nl=0.00, sp_nl=0.0, poisson_noise=True, poisson_alpha = 100, max_iter = 3000, gamma1 = 0.85, gamma2 = 1999, r=0.5, alpha_n = 0.9, alpha_s = 0.95, myLambda=0.5, result_output=False, architecture='DnCNN_nobn_nch_1_nlev_0.01', deg_op = 'random_sampling', method = 'comparisonC-3', ch = 1, m1 = 10, m2=10, gammaInADMMStep1=1)
 
+# (C unstable DnCNN)     experiment_data_list.append ({'settings' : {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : 300}, 'method' : {'method' : 'C-PnP-unstable-DnCNN', 'max_iter' : 300, 'gamma1' :  0.001, 'gamma2' : 999, 'myLambda' : 1, 'architecture' : 'dncnn_15'}, 'configs' : {'ch' : 1}})
 
 #    python test.py --max_iter=2000 --gamma1=0.49 --gamma2=0.99 --gaussian_nl=0.01 --sp_nl=0.0 --architecture=preDnCNN_nobn_nch_3_nlev_0.01 --alpha_n=0.95 --method=comparisonC-1 --r=0.7 --deg_op=random_sampling

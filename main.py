@@ -79,7 +79,7 @@ def test_all_images (experimental_settings_arg = {}, method_arg = {}, configs_ar
         cpu_time[index] = average_time
         psnr_obsrv = eval_psnr(img_true, img_obsrv)
         ssim_obsrv = eval_ssim(img_true, img_obsrv)
-        results[index] = {'filename' : filename, 'c': c_evolution, 'PSNR_evolution' : psnr_evolution, 'SSIM_evolution' : ssim_evolution, 'GROUND_TRUTH': img_true, 'OBSERVATION' : img_obsrv, 'RESULT': img_sol, 'REMOVED_SPARSE': s_sol, 'PSNR' : psnr_evolution[-1], 'SSIM' : ssim_evolution[-1], 'CPU_time' : average_time, 'PSNR_observation' : psnr_obsrv, 'SSIM_observation' : ssim_obsrv}
+        results[index] = {'filename' : filename, 'c_evolution': c_evolution, 'PSNR_evolution' : psnr_evolution, 'SSIM_evolution' : ssim_evolution, 'GROUND_TRUTH': img_true, 'OBSERVATION' : img_obsrv, 'RESULT': img_sol, 'REMOVED_SPARSE': s_sol, 'PSNR' : psnr_evolution[-1], 'SSIM' : ssim_evolution[-1], 'CPU_time' : average_time, 'PSNR_observation' : psnr_obsrv, 'SSIM_observation' : ssim_obsrv}
 
         # =====================================
         # Save images
@@ -126,12 +126,20 @@ def main():
     experiment_data_list = []
     filepath = config['path_result'] + 'SUMMARY(' + str(datetime.datetime.now().strftime("%Y%m%d %H%M%S %f")) + ').txt'
     touch_textfile (filepath)
-    experiment_data_list.append ({'settings' : {'gaussian_nl' : 0.005, 'sp_nl' : 0}, 'method' : {'method' : 'ours-A', 'max_iter' : 12, 'gamma1' : 0.99, 'gamma2' : 0.99, 'alpha_n' : 0.95}, 'configs' : {}})
-    experiment_data_list.append ({'settings' : {'gaussian_nl' : 0.05, 'sp_nl' : 0}, 'method' : {'method' : 'ours-A', 'max_iter' : 12, 'gamma1' : 0.99, 'gamma2' : 0.99, 'alpha_n' : 0.95}, 'configs' : {}})
+
+    noise_level_list = [0.01]
+    for nl in noise_level_list:
+        for i in range(4,5):
+#            experiment_data_list.append ({'settings' : {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : 300}, 'method' : {'method' : 'C-PnP-unstable-DnCNN', 'max_iter' : 1200, 'gamma1' :  0.05, 'gamma2' : 20, 'myLambda' : 1, 'architecture' : 'dncnn_15'}, 'configs' : {'ch' : 1}})
+#            experiment_data_list.append ({'settings' : {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : 300}, 'method' : {'method' : 'C-Proposed', 'max_iter' : 1200, 'gamma1' :   0.00055, 'gamma2' : 1786, 'myLambda' : 1, 'architecture' : 'DnCNN_nobn_nch_1_nlev_0.01'}, 'configs' : {'ch' : 1}})
+#            experiment_data_list.append ({'settings' : {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : 300}, 'method' : {'method' : 'C-PnP-unstable-DnCNN', 'max_iter' : 300, 'gamma1' :  0.00055, 'gamma2' : 1786, 'myLambda' : 1, 'architecture' : 'dncnn_15'}, 'configs' : {'ch' : 1}})
+            experiment_data_list.append ({'settings' : {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : 300}, 'method' : {'method' : 'C-PnP-unstable-DnCNN', 'max_iter' : 300, 'gamma1' :  0.001, 'gamma2' : 999, 'myLambda' : 1, 'architecture' : 'dncnn_15'}, 'configs' : {'ch' : 1}})
+    
     for experiment_data in experiment_data_list:
         data = test_all_images(experiment_data['settings'], experiment_data['method'], experiment_data['configs'])
         write_textfile (filepath, data)
     add_footer_textfile (filepath, data)
 
 if (__name__ == '__main__'):
+
     main()

@@ -3,7 +3,6 @@ import numpy as np
 
 def plot_graph():
     ## Reference: https://qiita.com/MENDY/items/fe9b0c50383d8b2fd919
-    
     plt.rcParams['font.family'] = 'Times New Roman' # font familyの設定
     plt.rcParams['mathtext.fontset'] = 'stix' # math fontの設定
     plt.rcParams["font.size"] = 14 # 全体のフォントサイズが変更されます。
@@ -21,30 +20,33 @@ def plot_graph():
     plt.rcParams["legend.markerscale"] = 1 # 点がある場合のmarker scale
     plt.rcParams["legend.borderaxespad"] = 0. # 凡例の端とグラフの端を合わせる
     
+    plot_content = 'PSNR'
     every = 100
-    myfile = './result/result-test/PSNR_comparisonA-7(Id)_nl0.005_4.jpeg(20240206-170634).npy'
-    y_1 = np.load(myfile)
-    y_2 = np.load(myfile)
-    y_3 = np.load(myfile)
-    y_4 = np.load(myfile)
-    x = np.linspace(0, y_1.size, (int)(y_1.size / every))
-    y_1 = y_1[::every]
-    y_2 = y_2[::every]
-    y_3 = y_3[::every]
-    y_4 = y_4[::every]
+    plot_content_data = {'PSNR' : {'title' : 'PSNR', 'key' : 'PSNR_evolution'}, 
+                        'c' :  {'title' : '$c_n$', 'key' : 'c_evolution'}}
+ 
+    filename_list = ['./result/result-test/DATA_C-PnP-unstable-DnCNN_blur_00000_(01.png)_20240215-183247-871956.npy']
+    y_list = [None] * len(filename_list)
+    data_list = [None] * len(filename_list)
+    method_name_list = [None] * len(filename_list)
+    for filename in filename_list:
+        data_list[filename_list.index(filename)] = np.load(filename, allow_pickle=True).item()
+        y_list[filename_list.index(filename)] = data_list[filename_list.index(filename)]['results'][0][plot_content_data[plot_content]['key']]
+        method_name_list[filename_list.index(filename)] = str(data_list[filename_list.index(filename)]['summary']['algorithm']) + ' (' + str(data_list[filename_list.index(filename)]['summary']['denoiser']) + ')'
+    x = np.linspace(0, y_list[0].size, (int)(y_list[0].size / every))
+    for filename in filename_list:
+        y_list[filename_list.index(filename)] = y_list[filename_list.index(filename)][::every]
 
     # plot
     fig = plt.figure()
     fig_1 = fig.add_subplot(111)
-    fig_1.plot(x, y_1, marker='o', markersize=7, markevery = 1, markeredgewidth=1., markeredgecolor='k', color="r", label="Proposed")
-    fig_1.plot(x, y_2, marker='x', markersize=7, markevery = 1,  markeredgewidth=1., markeredgecolor='k', color="b", label="PnP with BM3D")
-    fig_1.plot(x, y_3, marker='v', markersize=7, markevery = 1,  markeredgewidth=1., markeredgecolor='k', color="g", label="ADMM with DnCNN")
-    fig_1.plot(x, y_4, marker='.', markersize=7, markevery = 1,  markeredgewidth=1., markeredgecolor='k', color="m", label="RED with DnCNN")
-
     fig_1.set_xlabel(r"iterations")
-    fig_1.set_ylabel(r"PSNR")
-#    plt.yscale('log')
-#    plt.ylim(15, 27)
+    fig_1.set_ylabel(plot_content_data[plot_content]['title'])
+    for y in y_list:
+        fig_1.plot(x, y, marker='o', markersize=7, markevery = 1, markeredgewidth=1., markeredgecolor='k', color="r", label=method_name_list[y_list.index(y)])
+
+    if (plot_content == 'c'):
+        plt.yscale('log')
     plt.grid(color="gainsboro")
 
 #    fig_1.legend(ncol=1, bbox_to_anchor=(0., 1.025, 1., 0.102), loc="lower right")
@@ -54,11 +56,6 @@ def plot_graph():
     plt.show()
 #    fig.savefig('./ICASSP-result/test.png', bbox_inches="tight", pad_inches=0.05)
 #    fig.savefig('./ICASSP-result/test.eps', bbox_inches="tight", pad_inches=0.05)
-
-    #print
-#    params = np.load('./result-PDS/RESULT_AND_PARAMS_comparisonC-2(blur)_nl0.0_ll.png(20231204-193413).npy', allow_pickle=True)
-#    print(params)
-
 
 if (__name__ == '__main__'):
     plot_graph()
