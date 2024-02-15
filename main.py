@@ -128,13 +128,16 @@ def main():
     touch_textfile (filepath)
 
     noise_level_list = [0.01]
-    for nl in noise_level_list:
-        for i in range(4,5):
+#    for nl in noise_level_list:
+#        for i in range(4,5):
 #            experiment_data_list.append ({'settings' : {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : 300}, 'method' : {'method' : 'C-PnP-unstable-DnCNN', 'max_iter' : 1200, 'gamma1' :  0.05, 'gamma2' : 20, 'myLambda' : 1, 'architecture' : 'dncnn_15'}, 'configs' : {'ch' : 1}})
 #            experiment_data_list.append ({'settings' : {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : 300}, 'method' : {'method' : 'C-Proposed', 'max_iter' : 1200, 'gamma1' :   0.00055, 'gamma2' : 1786, 'myLambda' : 1, 'architecture' : 'DnCNN_nobn_nch_1_nlev_0.01'}, 'configs' : {'ch' : 1}})
 #            experiment_data_list.append ({'settings' : {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : 300}, 'method' : {'method' : 'C-PnP-unstable-DnCNN', 'max_iter' : 300, 'gamma1' :  0.00055, 'gamma2' : 1786, 'myLambda' : 1, 'architecture' : 'dncnn_15'}, 'configs' : {'ch' : 1}})
-            experiment_data_list.append ({'settings' : {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : 300}, 'method' : {'method' : 'C-PnP-unstable-DnCNN', 'max_iter' : 300, 'gamma1' :  0.001, 'gamma2' : 999, 'myLambda' : 1, 'architecture' : 'dncnn_15'}, 'configs' : {'ch' : 1}})
+#            experiment_data_list.append ({'settings' : {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : 300}, 'method' : {'method' : 'C-PnP-unstable-DnCNN', 'max_iter' : 300, 'gamma1' :  0.001, 'gamma2' : 999, 'myLambda' : 1, 'architecture' : 'dncnn_15'}, 'configs' : {'ch' : 1}})
     
+
+
+
     for experiment_data in experiment_data_list:
         data = test_all_images(experiment_data['settings'], experiment_data['method'], experiment_data['configs'])
         write_textfile (filepath, data)

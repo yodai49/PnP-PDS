@@ -21,11 +21,11 @@ def plot_graph():
     plt.rcParams["legend.borderaxespad"] = 0. # 凡例の端とグラフの端を合わせる
     
     plot_content = 'PSNR'
-    every = 100
+    every = 1
     plot_content_data = {'PSNR' : {'title' : 'PSNR', 'key' : 'PSNR_evolution'}, 
                         'c' :  {'title' : '$c_n$', 'key' : 'c_evolution'}}
  
-    filename_list = ['./result/result-test/DATA_C-PnP-unstable-DnCNN_blur_00000_(01.png)_20240215-183247-871956.npy']
+    filename_list = ['./result/result-test/DATA_C-Proposed_blur_00000_(01.png)_20240215-210346-533908.npy']
     y_list = [None] * len(filename_list)
     data_list = [None] * len(filename_list)
     method_name_list = [None] * len(filename_list)
