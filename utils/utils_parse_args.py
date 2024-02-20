@@ -7,7 +7,7 @@ def parse_args_exp (args):
     poisson_noise   = args['poisson_noise']    if ('poisson_noise' in args)    else False
     poisson_alpha   = args['poisson_alpha']    if('poisson_alpha' in args)     else 300
     deg_op          = args['deg_op']           if ('deg_op' in args)           else 'blur'
-    r               = args['r']                if ('r' in args)                else 1
+    r               = args['r']                if ('r' in args)                else 0.8
 
     return gaussian_nl, sp_nl, poisson_noise, poisson_alpha, deg_op, r
 

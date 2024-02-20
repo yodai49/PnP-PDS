@@ -127,15 +127,30 @@ def main():
     filepath = config['path_result'] + 'SUMMARY(' + str(datetime.datetime.now().strftime("%Y%m%d %H%M%S %f")) + ').txt'
     touch_textfile (filepath)
 
-    noise_level_list = [0.01]
-#    for nl in noise_level_list:
-#        for i in range(4,5):
-#            experiment_data_list.append ({'settings' : {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : 300}, 'method' : {'method' : 'C-PnP-unstable-DnCNN', 'max_iter' : 1200, 'gamma1' :  0.05, 'gamma2' : 20, 'myLambda' : 1, 'architecture' : 'dncnn_15'}, 'configs' : {'ch' : 1}})
-#            experiment_data_list.append ({'settings' : {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : 300}, 'method' : {'method' : 'C-Proposed', 'max_iter' : 1200, 'gamma1' :   0.00055, 'gamma2' : 1786, 'myLambda' : 1, 'architecture' : 'DnCNN_nobn_nch_1_nlev_0.01'}, 'configs' : {'ch' : 1}})
-#            experiment_data_list.append ({'settings' : {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : 300}, 'method' : {'method' : 'C-PnP-unstable-DnCNN', 'max_iter' : 300, 'gamma1' :  0.00055, 'gamma2' : 1786, 'myLambda' : 1, 'architecture' : 'dncnn_15'}, 'configs' : {'ch' : 1}})
-#            experiment_data_list.append ({'settings' : {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : 300}, 'method' : {'method' : 'C-PnP-unstable-DnCNN', 'max_iter' : 300, 'gamma1' :  0.001, 'gamma2' : 999, 'myLambda' : 1, 'architecture' : 'dncnn_15'}, 'configs' : {'ch' : 1}})
-    
-
+    noise_level_list = [0.0025, 0.005, 0.01, 0.02, 0.04]
+    obs_list = ['blur', 'random_sampling']
+    method_list_P = ['A-Proposed', 'A-PDS-TV']
+    method_list_G = ['A-PnPFBS-DnCNN', 'A-RED-DnCNN']
+    for nl in noise_level_list:
+        for obs in obs_list:
+            if (obs == 'blur'):
+                max_iter = 1200
+            elif (obs == 'random_sampling'):
+                max_iter = 3000
+            settings =  {'gaussian_nl' : nl, 'sp_nl' : 0, 'poisson_noise' : False, 'deg_op' : obs, 'r' : 0.8}
+            for method_P in method_list_P:
+                for i in range(0,10):
+                    alpha = 0.8 + (i + 1) * 0.02
+                    gamma1 = 0.99
+                    if (method_P == 'A-PDS-TV'):
+                        gamma1 = 0.125
+                    experiment_data_list.append ({'settings' : settings, 'method' : {'method' : method_P, 'max_iter' : max_iter, 'gamma1' :  gamma1, 'gamma2' :  0.99, 'alpha_n' : alpha}, 'configs' : {}})
+            for method_G in method_list_G:
+                for i in range(0,10):
+                    myLambda = (i + 1) * 0.2
+                    if(myLambda == 2):
+                        myLambda = 1.99
+                    experiment_data_list.append ({'settings' : settings, 'method' : {'method' : method_G, 'max_iter' : max_iter, 'gamma1' :  1, 'myLambda' : myLambda}, 'configs' : {}})
 
 
     for experiment_data in experiment_data_list:
@@ -146,3 +161,6 @@ def main():
 if (__name__ == '__main__'):
 
     main()
+
+
+### ファイル名に調整するパラメータの値を入れるようにする（上書きされるため）
