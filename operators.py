@@ -1,5 +1,4 @@
-import scipy
-import scipy.io
+import scipy, scipy.io
 import numpy as np
 
 from models.denoiser import Denoiser
@@ -83,7 +82,7 @@ def denoise(x, path_prox, ch):
     denoiser = Denoiser(file_name=path_prox, ch = ch)
     return denoiser.denoise(x)
 
-def denoise_by_Khai_DnCNN(x, path_prox, ch):
+def denoise_by_Khai_DnCNN(x):
     return net(x)
 
 def grad_x_l2(x, s, phi, adj_phi, x_0):
