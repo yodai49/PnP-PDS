@@ -1,1 +1,93 @@
 実験Aの場合はあまりgamma1やgamma2が復元結果に影響を与えないのに対し、実験Cではgamma1やgamma2が復元結果に影響を与えるのはなぜ？？
+
+実験C
+C-Proposed blurもrandom_samplingも0～2まで
+ADMMも0～2まで
+REDは0～0.2まで
+Unstableは0～10まで
+
+
+## 実験A main.pyコード
+def main():
+    experiment_data_list = []
+    filepath = config['path_result'] + 'SUMMARY(' + str(datetime.datetime.now().strftime("%Y%m%d %H%M%S %f")) + ').txt'
+    touch_textfile (filepath)
+
+    noise_level_list = [0.0025, 0.005, 0.01, 0.02, 0.04]
+    obs_list = ['blur', 'random_sampling']
+    method_list_P = ['A-Proposed', 'A-PDS-TV', 'A-PnPPDS-unstable-DnCNN']
+    method_list_G = ['A-PnPFBS-DnCNN', 'A-RED-DnCNN']
+    for nl in noise_level_list:
+        for obs in obs_list:
+            if (obs == 'blur'):
+                max_iter = 1200
+            elif (obs == 'random_sampling'):
+                max_iter = 3000
+            settings =  {'gaussian_nl' : nl, 'sp_nl' : 0, 'poisson_noise' : False, 'deg_op' : obs, 'r' : 0.8}
+            configs = {'add_timestamp' : False}
+            for method_P in method_list_P:
+                architecture = 'DnCNN_nobn_nch_3_nlev_0.01'
+                if (method_P == 'A-PnPPDS-unstable-DnCNN'):
+                    architecture = 'dncnn_color_blind'
+
+                for i in range(0,10):
+                    alpha = 0.8 + (i + 1) * 0.02
+                    gamma1 = 0.99
+                    if (method_P == 'A-PDS-TV'):
+                        gamma1 = 0.125
+                    experiment_data_list.append ({'settings' : settings, 'method' : {'method' : method_P, 'max_iter' : max_iter, 'gamma1' :  gamma1, 'gamma2' :  0.99, 'alpha_n' : alpha, 'architecture' : architecture}, 'configs' : configs})
+            for method_G in method_list_G:
+                for i in range(0,10):
+                    myLambda = (i + 1) * 0.2
+                    if(myLambda == 2):
+                        myLambda = 1.99
+                    experiment_data_list.append ({'settings' : settings, 'method' : {'method' : method_G, 'max_iter' : max_iter, 'gamma1' :  1, 'myLambda' : myLambda}, 'configs' : configs})
+
+
+    for experiment_data in experiment_data_list:
+        data = test_all_images(experiment_data['settings'], experiment_data['method'], experiment_data['configs'])
+        write_textfile (filepath, data)
+    add_footer_textfile (filepath, data)
+
+
+
+
+### 実験C main.pyコード
+def main():
+    experiment_data_list = []
+    filepath = config['path_result'] + 'SUMMARY(' + str(datetime.datetime.now().strftime("%Y%m%d %H%M%S %f")) + ').txt'
+    touch_textfile (filepath)
+
+    noise_level_list = [50, 100, 200, 300, 400]
+    obs_list = ['blur', 'random_sampling']
+    method_list_G = ['C-Proposed', 'C-PnPADMM-DnCNN', 'C-RED-DnCNN', 'C-PnP-unstable-DnCNN']
+    for nl in noise_level_list:
+        for obs in obs_list:
+            if (obs == 'blur'):
+                max_iter = 1200
+            elif (obs == 'random_sampling'):
+                max_iter = 3000
+            settings =  {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : nl, 'deg_op' : obs, 'r' : 0.8}
+            configs = {'add_timestamp' : True, 'ch' : 1}
+            for method_G in method_list_G:
+                for i in range(0,10):
+                    # C-Proposed blurもrandom_samplingも0～2まで
+                    # ADMMも0～2まで
+                    # REDは0～0.5まで
+                    # Unstableは0～10まで
+                    if (method_G == 'C-Proposed' or method_G == 'C-PnPADMM-DnCNN'):
+                        myLambda = (i + 1) * 0.2
+                    elif (method_G == 'C-RED-DnCNN'):
+                        myLambda = (i + 1) * 0.05
+                    elif (method_G == 'C-PnP-unstable-DnCNN'):
+                        myLambda = (i + 1)
+                    architecture = 'DnCNN_nobn_nch_1_nlev_0.01'
+                    if (method_G == 'C-PnP-unstable-DnCNN'):
+                        architecture = 'dncnn_15'
+                    experiment_data_list.append ({'settings' : settings, 'method' : {'method' : method_G, 'architecture' : architecture, 'max_iter' : max_iter, 'gamma1' : 0.0005, 'gamma2' : 1999, 'myLambda' : myLambda, 'm1' : 25, 'm2' : 12, 'gammaInADMMStep1' : 1}, 'configs' : configs})
+
+
+    for experiment_data in experiment_data_list:
+        data = test_all_images(experiment_data['settings'], experiment_data['method'], experiment_data['configs'])
+        write_textfile (filepath, data)
+    add_footer_textfile (filepath, data)

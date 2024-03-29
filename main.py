@@ -85,7 +85,7 @@ def test_all_images (experimental_settings_arg = {}, method_arg = {}, configs_ar
         # Save images
         # =====================================
         pictures = [img_true, img_obsrv, img_sol]
-        path_saveimg_base = method + '_' + deg_op + '_' + str(gaussian_nl).ljust(5, '0') + '_(' + filename + ')'
+        path_saveimg_base = method + '_' + deg_op + '_' + str(gaussian_nl).ljust(5, '0') + '_(' + filename + ')' + '_alpha' + str(alpha_n).ljust(5, '0') + '_lambda' + str(myLambda).ljust(5, '0')
         if (add_timestamp):
             path_saveimg_base = path_saveimg_base + '_' + str(datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
         path_pictures = [path_result + '\GROUND_TRUTH_' + path_saveimg_base,  path_result + '\OBSERVATION_' + path_saveimg_base, path_result + '\RESULT_' + path_saveimg_base]
@@ -127,36 +127,41 @@ def main():
     filepath = config['path_result'] + 'SUMMARY(' + str(datetime.datetime.now().strftime("%Y%m%d %H%M%S %f")) + ').txt'
     touch_textfile (filepath)
 
-    noise_level_list = [0.0025, 0.005, 0.01, 0.02, 0.04]
+    noise_level_list = [50, 100, 200, 300, 400]
     obs_list = ['blur', 'random_sampling']
-    method_list_P = ['A-Proposed', 'A-PDS-TV']
-    method_list_G = ['A-PnPFBS-DnCNN', 'A-RED-DnCNN']
+    method_list_G = ['C-Proposed', 'C-PnPADMM-DnCNN', 'C-RED-DnCNN', 'C-PnP-unstable-DnCNN']
     for nl in noise_level_list:
         for obs in obs_list:
             if (obs == 'blur'):
                 max_iter = 1200
             elif (obs == 'random_sampling'):
                 max_iter = 3000
-            settings =  {'gaussian_nl' : nl, 'sp_nl' : 0, 'poisson_noise' : False, 'deg_op' : obs, 'r' : 0.8}
-            for method_P in method_list_P:
-                for i in range(0,10):
-                    alpha = 0.8 + (i + 1) * 0.02
-                    gamma1 = 0.99
-                    if (method_P == 'A-PDS-TV'):
-                        gamma1 = 0.125
-                    experiment_data_list.append ({'settings' : settings, 'method' : {'method' : method_P, 'max_iter' : max_iter, 'gamma1' :  gamma1, 'gamma2' :  0.99, 'alpha_n' : alpha}, 'configs' : {}})
+            settings =  {'gaussian_nl' : 0, 'sp_nl' : 0, 'poisson_noise' : True, 'poisson_alpha' : nl, 'deg_op' : obs, 'r' : 0.8}
+            configs = {'add_timestamp' : True, 'ch' : 1}
             for method_G in method_list_G:
                 for i in range(0,10):
-                    myLambda = (i + 1) * 0.2
-                    if(myLambda == 2):
-                        myLambda = 1.99
-                    experiment_data_list.append ({'settings' : settings, 'method' : {'method' : method_G, 'max_iter' : max_iter, 'gamma1' :  1, 'myLambda' : myLambda}, 'configs' : {}})
+                    # C-Proposed blurもrandom_samplingも0～2まで
+                    # ADMMも0～2まで
+                    # REDは0～0.5まで
+                    # Unstableは0～10まで
+                    if (method_G == 'C-Proposed' or method_G == 'C-PnPADMM-DnCNN'):
+                        myLambda = (i + 1) * 0.2
+                    elif (method_G == 'C-RED-DnCNN'):
+                        myLambda = (i + 1) * 0.05
+                    elif (method_G == 'C-PnP-unstable-DnCNN'):
+                        myLambda = (i + 1)
+                    architecture = 'DnCNN_nobn_nch_1_nlev_0.01'
+                    if (method_G == 'C-PnP-unstable-DnCNN'):
+                        architecture = 'dncnn_15'
+                    experiment_data_list.append ({'settings' : settings, 'method' : {'method' : method_G, 'architecture' : architecture, 'max_iter' : max_iter, 'gamma1' : 0.0005, 'gamma2' : 1999, 'myLambda' : myLambda, 'm1' : 25, 'm2' : 12, 'gammaInADMMStep1' : 1}, 'configs' : configs})
 
 
     for experiment_data in experiment_data_list:
         data = test_all_images(experiment_data['settings'], experiment_data['method'], experiment_data['configs'])
         write_textfile (filepath, data)
     add_footer_textfile (filepath, data)
+
+
 
 if (__name__ == '__main__'):
 
